@@ -609,7 +609,7 @@ defmodule Vaultx.Auth.JWT do
 
   defp extract_jwt_payload(jwt) do
     case JOSE.JWT.peek_payload(jwt) do
-      %JOSE.JWT{fields: payload} ->
+      %{__struct__: JOSE.JWT, fields: payload} ->
         {:ok, payload}
     end
   rescue
@@ -619,7 +619,7 @@ defmodule Vaultx.Auth.JWT do
 
   defp extract_jwt_header(jwt) do
     case JOSE.JWT.peek_protected(jwt) do
-      %JOSE.JWS{fields: header} ->
+      %{__struct__: JOSE.JWS, fields: header} ->
         {:ok, header}
     end
   rescue
