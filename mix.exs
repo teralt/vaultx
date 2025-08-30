@@ -211,10 +211,9 @@ defmodule Vaultx.MixProject do
       files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* LICENSE*),
       licenses: ["MIT"],
       maintainers: ["fleey"],
-      organization: "teralt",
       links: %{
         "GitHub" => @source_url,
-        "Changelog" => "https://hexdocs.pm/vaultx/CHANGELOG.html",
+        "Changelog" => "https://hexdocs.pm/vaultx/changelog.html",
         "Documentation" => "https://hexdocs.pm/vaultx"
       }
     ]
