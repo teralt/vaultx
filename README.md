@@ -3,7 +3,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/vaultx.svg)](https://hex.pm/packages/vaultx)
 [![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/vaultx)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build Status](https://github.com/teralt/vaultx/workflows/CI/badge.svg)](https://github.com/teralt/vaultx/actions)
+[![Build Status](https://github.com/teralt/vaultx/workflows/Release/badge.svg)](https://github.com/teralt/vaultx/actions)
 
 Modern, enterprise-grade HashiCorp Vault client for Elixir.
 
