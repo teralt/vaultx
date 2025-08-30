@@ -1,0 +1,36 @@
+# mise configuration for VaultX
+# https://mise.jdx.dev/configuration.html
+
+[tools]
+# Elixir and Erlang/OTP versions (matching global config)
+elixir = "1.18.4-otp-28"
+erlang = "28.0.2"
+
+# Optional: Node.js for documentation tools or frontend assets
+# nodejs = "20.11.0"
+
+# Optional: Python for additional tooling
+# python = "3.12.0"
+
+[env]
+# Elixir environment variables
+MIX_ENV = "dev"
+
+# Optional: Set locale for consistent behavior
+# LC_ALL = "en_US.UTF-8"
+# LANG = "en_US.UTF-8"
+
+[tasks]
+# Common development tasks
+test = "mix test"
+format = "mix format"
+deps = "mix deps.get"
+compile = "mix compile"
+docs = "mix docs"
+check = "mix format --check-formatted && mix test"
+
+# Coverage task
+coverage = "mix test --cover"
+
+# Release tasks
+release-check = "mix format --check-formatted && mix test --cover"
