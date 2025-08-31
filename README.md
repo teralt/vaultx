@@ -5,8 +5,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://github.com/teralt/vaultx/workflows/Release/badge.svg)](https://github.com/teralt/vaultx/actions)
 
-Modern, enterprise-grade HashiCorp Vault client for Elixir.
-
 ## Overview
 
 VaultX is a high-level, production-ready Elixir client for [HashiCorp Vault](https://developer.hashicorp.com/vault) that focuses on:
