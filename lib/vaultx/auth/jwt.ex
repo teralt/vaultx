@@ -591,39 +591,60 @@ defmodule Vaultx.Auth.JWT do
     end
   end
 
-  defp verify_with_public_key(jwt, public_key) do
-    try do
-      case JOSE.JWT.verify_strict(JOSE.JWK.from_pem(public_key), ["RS256", "ES256"], jwt) do
-        {true, _payload, _jws} ->
-          :ok
+  # These functions are only called when JOSE is available (checked in validate_jwt_local/2)
+  # but we need to guard them to avoid compilation warnings
+  if Code.ensure_loaded?(JOSE.JWT) do
+    defp verify_with_public_key(jwt, public_key) do
+      try do
+        case JOSE.JWT.verify_strict(JOSE.JWK.from_pem(public_key), ["RS256", "ES256"], jwt) do
+          {true, _payload, _jws} ->
+            :ok
 
-        {false, _payload, _jws} ->
-          {:error, Error.new(:invalid_request, "JWT signature verification failed")}
+          {false, _payload, _jws} ->
+            {:error, Error.new(:invalid_request, "JWT signature verification failed")}
+        end
+      rescue
+        error ->
+          {:error,
+           Error.new(:invalid_request, "JWT signature verification error: #{inspect(error)}")}
+      end
+    end
+
+    defp extract_jwt_payload(jwt) do
+      case JOSE.JWT.peek_payload(jwt) do
+        %{__struct__: JOSE.JWT, fields: payload} ->
+          {:ok, payload}
       end
     rescue
-      error ->
-        {:error,
-         Error.new(:invalid_request, "JWT signature verification error: #{inspect(error)}")}
+      _ ->
+        {:error, Error.new(:invalid_request, "Invalid JWT payload format")}
     end
-  end
 
-  defp extract_jwt_payload(jwt) do
-    case JOSE.JWT.peek_payload(jwt) do
-      %{__struct__: JOSE.JWT, fields: payload} ->
-        {:ok, payload}
+    defp extract_jwt_header(jwt) do
+      case JOSE.JWT.peek_protected(jwt) do
+        %{__struct__: JOSE.JWS, fields: header} ->
+          {:ok, header}
+      end
+    rescue
+      _ ->
+        {:error, Error.new(:invalid_request, "Invalid JWT header format")}
     end
-  rescue
-    _ ->
-      {:error, Error.new(:invalid_request, "Invalid JWT payload format")}
-  end
+  else
+    # Fallback implementations when JOSE is not available
+    # These should never be called due to the check in validate_jwt_local/2
+    defp verify_with_public_key(_jwt, _public_key) do
+      {:error,
+       Error.new(:invalid_request, "JOSE library not available for signature verification")}
+    end
 
-  defp extract_jwt_header(jwt) do
-    case JOSE.JWT.peek_protected(jwt) do
-      %{__struct__: JOSE.JWS, fields: header} ->
-        {:ok, header}
+    defp extract_jwt_payload(_jwt) do
+      {:error,
+       Error.new(:invalid_request, "JOSE library not available for JWT payload extraction")}
     end
-  rescue
-    _ ->
-      {:error, Error.new(:invalid_request, "Invalid JWT header format")}
+
+    defp extract_jwt_header(_jwt) do
+      {:error,
+       Error.new(:invalid_request, "JOSE library not available for JWT header extraction")}
+    end
   end
 end
