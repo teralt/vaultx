@@ -11,7 +11,7 @@ VaultX is a high-level, production-ready Elixir client for [HashiCorp Vault](htt
 
 - **Simplicity**: A small, consistent API for common Vault tasks
 - **Correctness**: Typed interfaces, robust error handling, safe defaults
-- **Performance**: Pooled connections, adaptive retries, native JSON
+- **Performance**: Pooled connections, adaptive retries, native JSON, intelligent caching
 - **Observability**: Structured logging and optional telemetry
 - **Security**: Conservative security defaults, comprehensive validation
 - **BEAM-Native**: Designed for OTP distribution and hot code reloading workflows
@@ -23,6 +23,7 @@ VaultX is an Elixir library that wraps Vault's HTTP API with an ergonomic, state
 ### Core Features
 
 - **Secrets Management**: KV v1/v2 and other engines (read, write, delete, list)
+- **Intelligent Caching**: Multi-layer caching system (L1/L2/L3) with encryption support
 - **System Operations**: Health checks, seal status, initialization
 - **Lease Management**: Lookup, renew, revoke, tidy, and bulk operations
 - **Audit Devices**: List, enable, and disable audit logging
@@ -112,7 +113,7 @@ VaultX implements HashiCorp Vault's core workflow with four stages:
 
 VaultX follows modern Elixir library conventions:
 
-- **Stateless**: No GenServer or caching, pure function-based operations
+- **Stateless Core**: Pure function-based operations with optional intelligent caching
 - **Dynamic**: Configuration changes take effect immediately
 - **Hierarchical**: Environment variables override application configuration
 - **Validated**: Comprehensive validation using NimbleOptions
@@ -332,10 +333,42 @@ export VAULTX_TOKEN="hvs.xxxxx"  # or VAULT_TOKEN
 
 VaultX.Base.Config resolves settings from environment variables first, then application config, then defaults. Common variables:
 
+### Core Settings
+
 - `VAULTX_URL` / `VAULT_ADDR`: Vault server URL
 - `VAULTX_TOKEN` / `VAULT_TOKEN`: Authentication token
 - `VAULTX_NAMESPACE` / `VAULT_NAMESPACE`: Vault namespace (Enterprise)
 - Timeouts, retries, TLS options can be tuned via app env or options per call
+
+### Cache Settings
+
+> [!WARNING]
+> The intelligent caching system is currently experimental and may undergo breaking changes in future versions. Use with caution in production environments.
+
+- `VAULTX_CACHE_ENABLED`: Enable/disable intelligent caching (default: true)
+- `VAULTX_CACHE_L3_ENABLED`: Enable persistent cache layer (default: false)
+- `VAULTX_CACHE_L3_ENCRYPTION`: Enable AES-256-GCM encryption for persistent cache
+- `VAULTX_L3_ENCRYPTION_KEY`: Base64-encoded encryption key for L3 cache
+
+#### Cache Support Matrix
+
+| Operation | Support Status | Cache Key Format | TTL |
+|-----------|----------------|------------------|-----|
+| **KV v2 Read** | ✅ Full Support | `kv2:{mount}:{path}\|{version}` | 15 minutes |
+| **KV v1 Read** | ❌ Not Supported | - | - |
+| **Auth Token Validation** | 🚧 Planned | `auth:token:{hash}` | Token TTL |
+| **Policy Evaluation** | 🚧 Planned | `policy:{name}:{hash}` | 1 hour |
+| **Mount Metadata** | 🚧 Planned | `mount:{path}:metadata` | 1 hour |
+| **Lease Information** | 🚧 Planned | `lease:{id}` | Lease TTL |
+| **Transit Operations** | ❌ Not Supported | - | - |
+| **PKI Operations** | ❌ Not Supported | - | - |
+| **Dynamic Secrets** | ❌ Not Supported | - | - |
+
+**Legend:**
+
+- ✅ Full Support: Feature is implemented and tested
+- 🚧 Planned: Feature is planned for future releases
+- ❌ Not Supported: Feature is not planned or not suitable for caching
 
 For detailed configuration options, advanced settings, and examples, see [Configuration Guide](docs/configuration.md).
 

@@ -134,7 +134,6 @@ defmodule Vaultx.MixProject do
         "Base Infrastructure": [
           Vaultx.Base.Config,
           Vaultx.Base.Error,
-          Vaultx.Base.Features,
           Vaultx.Base.JSON,
           Vaultx.Base.Logger,
           Vaultx.Base.RateLimiter,
@@ -145,6 +144,17 @@ defmodule Vaultx.MixProject do
           Vaultx.Transport.HTTPBehaviour,
           Vaultx.Transport.HTTP,
           Vaultx.Transport.Pool
+        ],
+        "Cache System (Experimental)": [
+          Vaultx.Cache,
+          Vaultx.Cache.Manager,
+          Vaultx.Cache.L1,
+          Vaultx.Cache.L2,
+          Vaultx.Cache.L3,
+          Vaultx.Cache.Metrics,
+          Vaultx.Cache.Adapters,
+          Vaultx.Cache.Adapters.Behaviour,
+          Vaultx.Cache.Adapters.Memory
         ],
         "Secrets Engines": [
           Vaultx.Secrets.AWS.Behaviour,
