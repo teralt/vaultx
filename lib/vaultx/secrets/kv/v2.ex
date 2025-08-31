@@ -84,8 +84,8 @@ defmodule Vaultx.Secrets.KV.V2 do
   @behaviour Vaultx.Secrets.KV.Behaviour
 
   alias Vaultx.Base.{Error, Logger, Security, Telemetry}
+  alias Vaultx.Secrets.KV.Behaviour.{ListResult, SecretData, WriteResult}
   alias Vaultx.Transport.HTTP
-  alias Vaultx.Types
 
   @default_mount_path "secret"
 
@@ -116,7 +116,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => response_data}}} ->
           duration = System.monotonic_time() - start_time
 
-          secret_data = %Types.SecretData{
+          secret_data = %SecretData{
             data: response_data["data"] || %{},
             metadata: response_data["metadata"],
             version: response_data["metadata"]["version"],
@@ -215,7 +215,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => response_data}}} ->
           duration = System.monotonic_time() - start_time
 
-          write_result = %Types.WriteResult{
+          write_result = %WriteResult{
             version: response_data["version"],
             created_time: parse_datetime(response_data["created_time"]),
             deletion_time: parse_datetime(response_data["deletion_time"]),
@@ -396,7 +396,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => %{"keys" => keys}}}} ->
           duration = System.monotonic_time() - start_time
 
-          list_result = %Types.ListResult{
+          list_result = %ListResult{
             keys: keys,
             metadata: nil
           }
@@ -507,51 +507,6 @@ defmodule Vaultx.Secrets.KV.V2 do
     end
   end
 
-  def metadata do
-    {:ok,
-     %Types.EngineMetadata{
-       type: :kv,
-       version: 2,
-       capabilities: [
-         :read,
-         :write,
-         :delete,
-         :list,
-         :configure,
-         :metadata,
-         :versioning,
-         :cas,
-         :undelete,
-         :destroy
-       ],
-       configuration: %{},
-       mount_path: @default_mount_path
-     }}
-  end
-
-  def health_check(opts \\ []) do
-    # Health check by trying to read engine configuration
-    mount_path = Keyword.get(opts, :mount_path, @default_mount_path)
-
-    case HTTP.get("#{mount_path}/config", opts) do
-      {:ok, %{status: 200}} ->
-        {:ok,
-         %Types.HealthStatus{
-           healthy: true,
-           details: %{engine: "kv", version: 2},
-           timestamp: DateTime.utc_now()
-         }}
-
-      {:error, error} ->
-        {:ok,
-         %Types.HealthStatus{
-           healthy: false,
-           details: %{engine: "kv", version: 2, error: error},
-           timestamp: DateTime.utc_now()
-         }}
-    end
-  end
-
   @impl Vaultx.Secrets.KV.Behaviour
   def read_metadata(path, opts \\ []) do
     with :ok <- validate_path(path),
@@ -575,7 +530,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => response_data}}} ->
           duration = System.monotonic_time() - start_time
 
-          secret_data = %Types.SecretData{
+          secret_data = %SecretData{
             data: %{},
             metadata: response_data,
             version: nil,
@@ -953,7 +908,7 @@ defmodule Vaultx.Secrets.KV.V2 do
             |> Enum.sort()
             |> Enum.map(&to_string/1)
 
-          list_result = %Types.ListResult{
+          list_result = %ListResult{
             keys: version_list,
             metadata: response_data
           }

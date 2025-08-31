@@ -4,7 +4,6 @@ defmodule Vaultx.Secrets.KV.KVTest do
 
   alias Vaultx.Secrets.KV
   alias Vaultx.Base.Error
-  alias Vaultx.Types
 
   describe "detect_kv_version/2 and cache" do
     test "detects via /sys/mounts with explicit version and caches" do
@@ -108,7 +107,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         assert String.contains?(url, "/v1/kv1/")
       end)
 
-      assert {:ok, %Types.SecretData{data: %{"x" => "1"}}} = KV.read("app/x", mount_path: "kv1")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"x" => "1"}}} = KV.read("app/x", mount_path: "kv1")
 
       # 3) write
       expect_post(200, %{})
@@ -118,7 +117,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # 4) list
       expect_get(200, %{"data" => %{"keys" => ["a/"]}})
 
-      assert {:ok, %Types.ListResult{keys: ["a/"]}} = KV.list("app/", mount_path: "kv1")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a/"]}} = KV.list("app/", mount_path: "kv1")
 
       # 5) delete
       expect_delete(204, %{})
@@ -176,7 +175,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # read_metadata
       expect_get(200, %{"data" => %{}})
 
-      assert {:ok, %Types.SecretData{}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{}} =
                KV.read_metadata("p", mount_path: "secret")
 
       # undelete
@@ -190,26 +189,12 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # list_versions
       expect_get(200, %{"data" => %{"versions" => %{}}})
 
-      assert {:ok, %Types.ListResult{}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{}} =
                KV.list_versions("p", mount_path: "secret")
-    end
-
-    test "health_check delegates to proper engine and error path returns healthy: false" do
-      # version detection fails -> health_check returns healthy: false
-      stub_request_raw(:get, :timeout)
-
-      assert {:ok, %Types.HealthStatus{healthy: false}} = KV.health_check(mount_path: "secret")
     end
   end
 
   describe "KV module extras" do
-    test "metadata/0 returns auto_detection capability" do
-      assert {:ok, %Types.EngineMetadata{type: :kv, version: nil, capabilities: caps}} =
-               KV.metadata()
-
-      assert :auto_detection in caps
-    end
-
     test "with_version_detection error path bubbles up on read/2" do
       # make version detection fail: mounts error and config error
       stub_request_raw(:get, :econnrefused)
@@ -317,32 +302,6 @@ defmodule Vaultx.Secrets.KV.KVTest do
       assert :ok = KV.delete_metadata("p", mount_path: "secret")
       assert :ok = KV.destroy("p", versions: [1], mount_path: "secret")
     end
-
-    test "health_check ok branch when version detected" do
-      stub_ok(
-        :get,
-        200,
-        %{
-          "data" => %{"secret/" => %{"type" => "kv", "options" => %{"version" => "2"}}}
-        },
-        fn url, _body, _opts ->
-          cond do
-            String.contains?(url, "/sys/mounts") ->
-              ok_resp(200, %{
-                "data" => %{"secret/" => %{"type" => "kv", "options" => %{"version" => "2"}}}
-              })
-
-            String.contains?(url, "/v1/secret/config") ->
-              ok_resp(200, %{})
-
-            true ->
-              ok_resp(500, %{})
-          end
-        end
-      )
-
-      assert {:ok, %Types.HealthStatus{healthy: true}} = KV.health_check(mount_path: "secret")
-    end
   end
 
   describe "convenience functions" do
@@ -372,7 +331,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Types.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
                KV.read_version("test", 2, mount_path: "secret")
     end
 
@@ -402,7 +361,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       )
 
       # Call with only 2 args to trigger the default opts clause
-      assert {:ok, %Types.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
                KV.read_version("test", 2)
     end
 
@@ -432,7 +391,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Types.WriteResult{}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{}} =
                KV.write_cas("test", %{"key" => "value"}, 1, mount_path: "secret")
     end
 
@@ -499,7 +458,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Types.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
                KV.read_latest("test", mount_path: "secret")
     end
 
@@ -745,7 +704,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Types.WriteResult{}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{}} =
                KV.update_field("test", "password", "new_secret", mount_path: "secret")
     end
 

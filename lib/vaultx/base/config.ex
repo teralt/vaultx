@@ -84,8 +84,6 @@ defmodule Vaultx.Base.Config do
       end
   """
 
-  alias Vaultx.Types
-
   alias Vaultx.Base.Error
 
   @type retry_backoff :: :linear | :exponential
@@ -93,7 +91,7 @@ defmodule Vaultx.Base.Config do
   @type t :: %{
           # Core configuration
           url: String.t(),
-          token: Types.token() | nil,
+          token: String.t() | nil,
           namespace: String.t() | nil,
 
           # Network & timeouts
@@ -364,7 +362,7 @@ defmodule Vaultx.Base.Config do
       "hvs.CAESIJ..."
 
   """
-  @spec get_token() :: Types.token() | nil
+  @spec get_token() :: String.t() | nil
   def get_token do
     case get_env_var(["VAULTX_TOKEN", "VAULT_TOKEN"]) do
       nil -> Application.get_env(:vaultx, :token, @default_config.token)

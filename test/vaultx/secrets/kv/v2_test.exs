@@ -4,7 +4,6 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
   alias Vaultx.Secrets.KV.V2
   alias Vaultx.Base.Error
-  alias Vaultx.Types
 
   describe "validation error mapping" do
     test "list/2 invalid_characters -> invalid_request" do
@@ -36,7 +35,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         assert_url_contains("/v1/secret/data/p")
       )
 
-      assert {:ok, %Types.SecretData{created_time: nil, deletion_time: nil}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} =
                V2.read("p", mount_path: "secret")
     end
 
@@ -55,7 +54,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         }
       })
 
-      assert {:ok, %Types.SecretData{} = s} = V2.read("apps/config")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{} = s} = V2.read("apps/config")
       assert s.data == %{"key" => "val"}
       assert s.version == 2
       assert %DateTime{} = s.created_time
@@ -102,7 +101,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         end
       )
 
-      assert {:ok, %Types.WriteResult{version: 3}} =
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{version: 3}} =
                V2.write("apps/config", %{"k" => "v"}, cas: 1)
     end
 
@@ -167,22 +166,6 @@ defmodule Vaultx.Secrets.KV.V2Test do
     end
   end
 
-  describe "health_check/1" do
-    test "healthy when GET /config returns 200" do
-      stub_ok(:get, 200, %{}, assert_url_contains("/v1/secret/config"))
-
-      assert {:ok, status} = V2.health_check()
-      assert status.healthy
-    end
-
-    test "unhealthy when server/network error" do
-      stub_request_raw(:get, :timeout)
-
-      assert {:ok, status} = V2.health_check()
-      refute status.healthy
-    end
-  end
-
   describe "delete/2" do
     test "deletes latest and specific versions" do
       # delete latest (HTTP.encode_body returns "" for nil)
@@ -225,7 +208,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, %{"data" => %{"created_time" => now, "deletion_time" => nil}})
 
-      assert {:ok, %Types.SecretData{metadata: %{"created_time" => ^now}}} = V2.read_metadata("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{metadata: %{"created_time" => ^now}}} = V2.read_metadata("p")
 
       expect_any(:get, 404, %{})
 
@@ -280,7 +263,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         }
       })
 
-      assert {:ok, %Types.SecretData{created_time: nil, deletion_time: nil}} = V2.read("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} = V2.read("p")
     end
 
     test "list/2, delete/2 validate opts type" do
@@ -365,7 +348,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         end
       )
 
-      assert {:ok, %Types.ListResult{keys: ["1", "3"]}} = V2.list_versions("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "3"]}} = V2.list_versions("p")
 
       # 404 error
       expect_get(404, %{})
@@ -383,7 +366,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
     test "list/2 returns keys and errors" do
       expect_get(200, %{"data" => %{"keys" => ["a", "b/"]}}, assert_url_contains("/metadata/"))
 
-      assert {:ok, %Types.ListResult{keys: ["a", "b/"]}} = V2.list("p/")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a", "b/"]}} = V2.list("p/")
 
       expect_any(:get, 404, %{})
 
@@ -395,7 +378,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, body)
 
-      assert {:ok, %Types.ListResult{keys: ["1", "2", "10"]}} = V2.list_versions("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "2", "10"]}} = V2.list_versions("p")
     end
   end
 
@@ -409,27 +392,6 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       assert {:error, %Error{type: :server_error}} = V2.configure(%{})
     end
-
-    test "metadata returns v2 capabilities and health_check by config endpoint" do
-      assert {:ok, %Types.EngineMetadata{version: 2, capabilities: caps}} = V2.metadata()
-      assert :versioning in caps and :cas in caps
-
-      # health ok
-      stub_ok(:get, 200, %{})
-
-      assert {:ok, %Types.HealthStatus{healthy: true}} = V2.health_check()
-
-      # health error -> return {:error, :timeout} so HTTP layer wraps correctly
-      stub_request_raw(:get, :timeout)
-
-      assert {:ok, %Types.HealthStatus{healthy: false}} = V2.health_check()
-    end
-  end
-
-  test "health_check/1 uses default opts (covers function head)" do
-    stub_ok(:get, 200, %{}, assert_url_contains("/v1/secret/config"))
-
-    assert {:ok, %Types.HealthStatus{healthy: true}} = V2.health_check()
   end
 
   describe "additional kv2 edge branches" do

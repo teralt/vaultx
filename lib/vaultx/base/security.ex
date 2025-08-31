@@ -77,7 +77,6 @@ defmodule Vaultx.Base.Security do
   import Bitwise
 
   alias Vaultx.Base.Logger
-  alias Vaultx.Types
 
   # Type definitions
   @type audit_event_type ::
@@ -98,7 +97,7 @@ defmodule Vaultx.Base.Security do
   @type audit_result :: :success | :failure | :attempt
   @type audit_metadata :: map()
   @type ssl_config :: map()
-  @type token :: Types.token()
+  @type token :: String.t()
   @type validation_result :: :ok | {:error, String.t()}
 
   # Sensitive keys that should be sanitized in logs

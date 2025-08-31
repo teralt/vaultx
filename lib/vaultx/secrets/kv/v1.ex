@@ -68,8 +68,8 @@ defmodule Vaultx.Secrets.KV.V1 do
   @behaviour Vaultx.Secrets.KV.Behaviour
 
   alias Vaultx.Base.{Error, Logger, Security, Telemetry}
+  alias Vaultx.Secrets.KV.Behaviour.{ListResult, SecretData, WriteResult}
   alias Vaultx.Transport.HTTP
-  alias Vaultx.Types
 
   @default_mount_path "secret"
 
@@ -95,7 +95,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: 200, body: %{"data" => data}}} ->
           duration = System.monotonic_time() - start_time
 
-          secret_data = %Types.SecretData{
+          secret_data = %SecretData{
             data: data,
             metadata: nil,
             version: nil,
@@ -181,7 +181,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: status}} when status in [200, 204] ->
           duration = System.monotonic_time() - start_time
 
-          write_result = %Types.WriteResult{
+          write_result = %WriteResult{
             version: nil,
             created_time: DateTime.utc_now(),
             deletion_time: nil,
@@ -323,7 +323,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: 200, body: %{"data" => %{"keys" => keys}}}} ->
           duration = System.monotonic_time() - start_time
 
-          list_result = %Types.ListResult{
+          list_result = %ListResult{
             keys: keys,
             metadata: nil
           }
@@ -380,38 +380,6 @@ defmodule Vaultx.Secrets.KV.V1 do
   def configure(_config, _opts \\ []) do
     # KV v1 doesn't support configuration
     {:error, Error.new(:not_implemented, "KV v1 does not support configuration")}
-  end
-
-  def metadata do
-    {:ok,
-     %Types.EngineMetadata{
-       type: :kv,
-       version: 1,
-       capabilities: [:read, :write, :delete, :list],
-       configuration: %{},
-       mount_path: @default_mount_path
-     }}
-  end
-
-  def health_check(_opts \\ []) do
-    # Simple health check - try to list root path
-    case list("health-check", []) do
-      {:ok, _} ->
-        {:ok,
-         %Types.HealthStatus{
-           healthy: true,
-           details: %{engine: "kv", version: 1},
-           timestamp: DateTime.utc_now()
-         }}
-
-      {:error, error} ->
-        {:ok,
-         %Types.HealthStatus{
-           healthy: false,
-           details: %{engine: "kv", version: 1, error: error},
-           timestamp: DateTime.utc_now()
-         }}
-    end
   end
 
   # KV v1 doesn't support these operations - return appropriate errors
