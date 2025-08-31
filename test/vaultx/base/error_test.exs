@@ -168,7 +168,8 @@ defmodule Vaultx.Base.ErrorTest do
         :json_decode_error,
         :json_encode_error,
         :ssl_error,
-        :rate_limited
+        :rate_limited,
+        :http_error
       ]
 
       for error_type <- error_types do
