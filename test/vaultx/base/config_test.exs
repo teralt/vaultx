@@ -661,4 +661,154 @@ defmodule Vaultx.Base.ConfigTest do
       assert {:error, _} = Config.validate_percentage("50")
     end
   end
+
+  # ============================================================================
+  # Feature Management Tests (migrated from Features module)
+  # ============================================================================
+
+  describe "feature_enabled?/1" do
+    test "returns true for enabled telemetry" do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      assert Config.feature_enabled?(:telemetry) == true
+    end
+
+    test "returns false for disabled telemetry" do
+      Application.put_env(:vaultx, :telemetry_enabled, false)
+      assert Config.feature_enabled?(:telemetry) == false
+    end
+
+    test "returns true for enabled logger" do
+      Application.put_env(:vaultx, :logger_level, :info)
+      assert Config.feature_enabled?(:logger) == true
+    end
+
+    test "returns false for disabled logger" do
+      Application.put_env(:vaultx, :logger_level, :none)
+      assert Config.feature_enabled?(:logger) == false
+    end
+
+    test "returns true for enabled retry" do
+      Application.put_env(:vaultx, :retry_attempts, 3)
+      assert Config.feature_enabled?(:retry) == true
+    end
+
+    test "returns false for disabled retry" do
+      Application.put_env(:vaultx, :retry_attempts, 0)
+      assert Config.feature_enabled?(:retry) == false
+    end
+
+    test "returns true for enabled ssl_verify" do
+      Application.put_env(:vaultx, :ssl_verify, true)
+      assert Config.feature_enabled?(:ssl_verify) == true
+    end
+
+    test "returns false for disabled ssl_verify" do
+      Application.put_env(:vaultx, :ssl_verify, false)
+      assert Config.feature_enabled?(:ssl_verify) == false
+    end
+
+    test "returns true for enabled audit" do
+      Application.put_env(:vaultx, :audit_enabled, true)
+      assert Config.feature_enabled?(:audit) == true
+    end
+
+    test "returns false for disabled audit" do
+      Application.put_env(:vaultx, :audit_enabled, false)
+      assert Config.feature_enabled?(:audit) == false
+    end
+
+    test "returns true for enabled cache" do
+      Application.put_env(:vaultx, :cache_enabled, true)
+      assert Config.feature_enabled?(:cache) == true
+    end
+
+    test "returns false for disabled cache" do
+      Application.put_env(:vaultx, :cache_enabled, false)
+      assert Config.feature_enabled?(:cache) == false
+    end
+
+    test "returns true for enabled rate_limit" do
+      Application.put_env(:vaultx, :rate_limit_enabled, true)
+      assert Config.feature_enabled?(:rate_limit) == true
+    end
+
+    test "returns false for disabled rate_limit" do
+      Application.put_env(:vaultx, :rate_limit_enabled, false)
+      assert Config.feature_enabled?(:rate_limit) == false
+    end
+
+    test "returns false for unknown feature" do
+      assert Config.feature_enabled?(:unknown) == false
+    end
+
+    test "returns false for non-atom feature" do
+      assert Config.feature_enabled?("telemetry") == false
+    end
+  end
+
+  describe "features_status/0" do
+    test "returns status of all features" do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      Application.put_env(:vaultx, :logger_level, :info)
+      Application.put_env(:vaultx, :retry_attempts, 3)
+      Application.put_env(:vaultx, :ssl_verify, true)
+      Application.put_env(:vaultx, :audit_enabled, false)
+      Application.put_env(:vaultx, :cache_enabled, true)
+      Application.put_env(:vaultx, :rate_limit_enabled, false)
+
+      status = Config.features_status()
+
+      assert status.telemetry == true
+      assert status.logger == true
+      assert status.retry == true
+      assert status.ssl_verify == true
+      assert status.audit == false
+      assert status.cache == true
+      assert status.rate_limit == false
+    end
+  end
+
+  describe "enabled_features/0" do
+    test "returns only enabled features" do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      Application.put_env(:vaultx, :logger_level, :info)
+      Application.put_env(:vaultx, :retry_attempts, 0)
+      Application.put_env(:vaultx, :ssl_verify, true)
+      Application.put_env(:vaultx, :audit_enabled, false)
+      Application.put_env(:vaultx, :cache_enabled, true)
+      Application.put_env(:vaultx, :rate_limit_enabled, false)
+
+      enabled = Config.enabled_features()
+
+      assert :telemetry in enabled
+      assert :logger in enabled
+      assert :ssl_verify in enabled
+      assert :cache in enabled
+      refute :retry in enabled
+      refute :audit in enabled
+      refute :rate_limit in enabled
+    end
+  end
+
+  describe "disabled_features/0" do
+    test "returns only disabled features" do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      Application.put_env(:vaultx, :logger_level, :none)
+      Application.put_env(:vaultx, :retry_attempts, 3)
+      Application.put_env(:vaultx, :ssl_verify, false)
+      Application.put_env(:vaultx, :audit_enabled, true)
+      Application.put_env(:vaultx, :cache_enabled, false)
+      Application.put_env(:vaultx, :rate_limit_enabled, true)
+
+      disabled = Config.disabled_features()
+
+      assert :logger in disabled
+      assert :ssl_verify in disabled
+      assert :cache in disabled
+      refute :telemetry in disabled
+      refute :retry in disabled
+      refute :audit in disabled
+      refute :rate_limit in disabled
+    end
+  end
 end

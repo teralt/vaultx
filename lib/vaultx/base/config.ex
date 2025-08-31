@@ -61,6 +61,27 @@ defmodule Vaultx.Base.Config do
   - `VAULTX_AUDIT_ENABLED` - Enable audit logging (true/false, default: false)
   - `VAULTX_METRICS_ENABLED` - Enable metrics collection (true/false, default: true)
 
+  ### Cache Configuration (Experimental)
+  - `VAULTX_CACHE_ENABLED` - Enable intelligent caching system (true/false, default: true)
+  - `VAULTX_CACHE_L1_ENABLED` - Enable L1 memory cache (true/false, default: true)
+  - `VAULTX_CACHE_L1_MAX_SIZE` - Maximum L1 cache entries (default: 10000)
+  - `VAULTX_CACHE_L1_TTL_DEFAULT` - Default L1 TTL in milliseconds (default: 900000)
+  - `VAULTX_CACHE_L2_ENABLED` - Enable L2 distributed cache (true/false, default: true)
+  - `VAULTX_CACHE_L2_CLEANUP_INTERVAL` - L2 cache cleanup interval in milliseconds (default: 600000)
+  - `VAULTX_CACHE_L2_ADAPTER` - L2 cache adapter (Memory/Redis, default: Memory)
+  - `VAULTX_CACHE_L2_MAX_SIZE` - Maximum L2 cache entries (default: 50000)
+  - `VAULTX_CACHE_L2_TTL_DEFAULT` - Default L2 TTL in milliseconds (default: 3600000)
+  - `VAULTX_CACHE_L3_ENABLED` - Enable L3 persistent cache (true/false, default: false)
+  - `VAULTX_CACHE_L3_STORAGE_PATH` - L3 cache storage path (default: /tmp/vaultx_cache)
+  - `VAULTX_CACHE_L3_TTL_DEFAULT` - Default L3 TTL in milliseconds (default: 86400000)
+  - `VAULTX_CACHE_L3_CLEANUP_INTERVAL` - L3 cache cleanup interval in milliseconds (default: 3600000)
+  - `VAULTX_CACHE_L3_ENCRYPTION` - Enable L3 encryption (true/false, default: false)
+  - `VAULTX_CACHE_EVICTION_POLICY` - Cache eviction policy (lru/lfu/ttl, default: lru)
+  - `VAULTX_CACHE_MAX_MEMORY_USAGE` - Maximum cache memory in bytes (default: 104857600)
+  - `VAULTX_CACHE_WARMING_ENABLED` - Enable cache warming (true/false, default: true)
+  - `VAULTX_CACHE_METRICS_ENABLED` - Enable cache metrics (true/false, default: true)
+  - `VAULTX_CACHE_MANAGER_CLEANUP_INTERVAL` - Cache manager cleanup interval in milliseconds (default: 300000)
+
   ### Security & Compliance
   - `VAULTX_RATE_LIMIT_ENABLED` - Enable client-side rate limiting (true/false, default: false)
   - `VAULTX_RATE_LIMIT_REQUESTS` - Requests per second limit (default: 100)
@@ -121,6 +142,28 @@ defmodule Vaultx.Base.Config do
           audit_enabled: boolean(),
           metrics_enabled: boolean(),
 
+          # Cache configuration
+          cache_enabled: boolean(),
+          cache_l1_enabled: boolean(),
+          cache_l1_max_size: pos_integer(),
+          cache_l1_ttl_default: pos_integer(),
+          cache_l1_cleanup_interval: pos_integer(),
+          cache_l2_enabled: boolean(),
+          cache_l2_adapter: atom(),
+          cache_l2_max_size: pos_integer(),
+          cache_l2_ttl_default: pos_integer(),
+          cache_l2_cleanup_interval: pos_integer(),
+          cache_l3_enabled: boolean(),
+          cache_l3_storage_path: String.t(),
+          cache_l3_ttl_default: pos_integer(),
+          cache_l3_cleanup_interval: pos_integer(),
+          cache_l3_encryption: boolean(),
+          cache_eviction_policy: atom(),
+          cache_max_memory_usage: pos_integer(),
+          cache_warming_enabled: boolean(),
+          cache_metrics_enabled: boolean(),
+          cache_manager_cleanup_interval: pos_integer(),
+
           # Security & compliance
           rate_limit_enabled: boolean(),
           rate_limit_requests: pos_integer(),
@@ -162,6 +205,36 @@ defmodule Vaultx.Base.Config do
     telemetry_enabled: true,
     audit_enabled: false,
     metrics_enabled: true,
+
+    # Cache configuration
+    cache_enabled: true,
+    cache_l1_enabled: true,
+    cache_l1_max_size: 10_000,
+    # 15 minutes
+    cache_l1_ttl_default: 900_000,
+    # 5 minutes
+    cache_l1_cleanup_interval: 300_000,
+    cache_l2_enabled: true,
+    cache_l2_adapter: Vaultx.Cache.Adapters.Memory,
+    cache_l2_max_size: 50_000,
+    # 1 hour
+    cache_l2_ttl_default: 3_600_000,
+    # 10 minutes
+    cache_l2_cleanup_interval: 600_000,
+    cache_l3_enabled: false,
+    cache_l3_storage_path: "/tmp/vaultx_cache",
+    # 24 hours
+    cache_l3_ttl_default: 86_400_000,
+    # 1 hour
+    cache_l3_cleanup_interval: 3_600_000,
+    cache_l3_encryption: false,
+    cache_eviction_policy: :lru,
+    # 100MB
+    cache_max_memory_usage: 104_857_600,
+    cache_warming_enabled: true,
+    cache_metrics_enabled: true,
+    # 5 minutes
+    cache_manager_cleanup_interval: 300_000,
 
     # Security & compliance
     rate_limit_enabled: false,
@@ -284,6 +357,108 @@ defmodule Vaultx.Base.Config do
       type: :boolean,
       default: true,
       doc: "Enable metrics collection for performance monitoring"
+    ],
+
+    # Cache configuration
+    cache_enabled: [
+      type: :boolean,
+      default: true,
+      doc: "Enable intelligent multi-tier caching system"
+    ],
+    cache_l1_enabled: [
+      type: :boolean,
+      default: true,
+      doc: "Enable L1 memory cache (ETS-based)"
+    ],
+    cache_l1_max_size: [
+      type: :pos_integer,
+      default: 10_000,
+      doc: "Maximum number of entries in L1 cache"
+    ],
+    cache_l1_ttl_default: [
+      type: :pos_integer,
+      default: 900_000,
+      doc: "Default TTL for L1 cache entries in milliseconds (15 minutes)"
+    ],
+    cache_l1_cleanup_interval: [
+      type: :pos_integer,
+      default: 300_000,
+      doc: "L1 cache cleanup interval in milliseconds (5 minutes)"
+    ],
+    cache_l2_enabled: [
+      type: :boolean,
+      default: true,
+      doc: "Enable L2 distributed cache"
+    ],
+    cache_l2_adapter: [
+      type: :atom,
+      default: Vaultx.Cache.Adapters.Memory,
+      doc: "L2 cache adapter module (Memory, Redis, etc.)"
+    ],
+    cache_l2_max_size: [
+      type: :pos_integer,
+      default: 50_000,
+      doc: "Maximum number of entries in L2 cache"
+    ],
+    cache_l2_ttl_default: [
+      type: :pos_integer,
+      default: 3_600_000,
+      doc: "Default TTL for L2 cache entries in milliseconds (1 hour)"
+    ],
+    cache_l2_cleanup_interval: [
+      type: :pos_integer,
+      default: 600_000,
+      doc: "L2 cache cleanup interval in milliseconds (10 minutes)"
+    ],
+    cache_l3_enabled: [
+      type: :boolean,
+      default: false,
+      doc: "Enable L3 persistent cache (file-based)"
+    ],
+    cache_l3_storage_path: [
+      type: :string,
+      default: "/tmp/vaultx_cache",
+      doc: "Storage path for L3 persistent cache files"
+    ],
+    cache_l3_ttl_default: [
+      type: :pos_integer,
+      default: 86_400_000,
+      doc: "Default TTL for L3 cache entries in milliseconds (24 hours)"
+    ],
+    cache_l3_cleanup_interval: [
+      type: :pos_integer,
+      default: 3_600_000,
+      doc: "L3 cache cleanup interval in milliseconds (1 hour)"
+    ],
+    cache_l3_encryption: [
+      type: :boolean,
+      default: false,
+      doc: "Enable encryption for L3 cache files"
+    ],
+    cache_eviction_policy: [
+      type: {:in, [:lru, :lfu, :ttl]},
+      default: :lru,
+      doc: "Cache eviction policy (LRU, LFU, or TTL-based)"
+    ],
+    cache_max_memory_usage: [
+      type: :pos_integer,
+      default: 104_857_600,
+      doc: "Maximum memory usage for caching in bytes (100MB)"
+    ],
+    cache_warming_enabled: [
+      type: :boolean,
+      default: true,
+      doc: "Enable cache warming for improved performance"
+    ],
+    cache_metrics_enabled: [
+      type: :boolean,
+      default: true,
+      doc: "Enable cache metrics collection and reporting"
+    ],
+    cache_manager_cleanup_interval: [
+      type: :pos_integer,
+      default: 300_000,
+      doc: "Cache manager cleanup interval in milliseconds (5 minutes)"
     ],
 
     # Security & compliance
@@ -930,6 +1105,23 @@ defmodule Vaultx.Base.Config do
   end
 
   @doc """
+  Gets the cache system enabled setting.
+
+  ## Examples
+
+      iex> Vaultx.Base.Config.get_cache_enabled()
+      true
+
+  """
+  @spec get_cache_enabled() :: boolean()
+  def get_cache_enabled do
+    case get_env_var_as_boolean(["VAULTX_CACHE_ENABLED"]) do
+      nil -> Application.get_env(:vaultx, :cache_enabled, @default_config.cache_enabled)
+      cache_enabled -> cache_enabled
+    end
+  end
+
+  @doc """
   Gets the rate limiting enabled setting.
 
   ## Examples
@@ -1214,5 +1406,121 @@ defmodule Vaultx.Base.Config do
       end
 
     {warnings, recommendations}
+  end
+
+  # ============================================================================
+  # Feature Management Functions (migrated from Vaultx.Base.Features)
+  # ============================================================================
+
+  @type feature ::
+          :telemetry
+          | :logger
+          | :retry
+          | :ssl_verify
+          | :audit
+          | :cache
+          | :rate_limit
+
+  @type feature_config :: %{
+          telemetry: boolean(),
+          logger: boolean(),
+          retry: boolean(),
+          ssl_verify: boolean(),
+          audit: boolean(),
+          cache: boolean(),
+          rate_limit: boolean()
+        }
+
+  @doc """
+  Checks if a specific feature is enabled.
+
+  This function replaces the functionality from the removed Vaultx.Base.Features module.
+  It checks configuration values to determine if features are enabled.
+
+  ## Examples
+
+      iex> Vaultx.Base.Config.feature_enabled?(:telemetry)
+      true
+
+      iex> Vaultx.Base.Config.feature_enabled?(:logger)
+      false
+
+  """
+  @spec feature_enabled?(feature()) :: boolean()
+  def feature_enabled?(feature) when is_atom(feature) do
+    case feature do
+      :telemetry -> get_telemetry_enabled()
+      :logger -> get_logger_level() != :none
+      :retry -> get_retry_attempts() > 0
+      :ssl_verify -> get_ssl_verify()
+      :audit -> get_audit_enabled()
+      :cache -> get_cache_enabled()
+      :rate_limit -> get_rate_limit_enabled()
+      _ -> false
+    end
+  end
+
+  def feature_enabled?(_feature) do
+    false
+  end
+
+  @doc """
+  Returns the status of all features.
+
+  ## Examples
+
+      iex> Vaultx.Base.Config.features_status()
+      %{
+        telemetry: true,
+        logger: true,
+        retry: true,
+        ssl_verify: true,
+        audit: true,
+        cache: true,
+        rate_limit: false
+      }
+
+  """
+  @spec features_status() :: feature_config()
+  def features_status do
+    %{
+      telemetry: feature_enabled?(:telemetry),
+      logger: feature_enabled?(:logger),
+      retry: feature_enabled?(:retry),
+      ssl_verify: feature_enabled?(:ssl_verify),
+      audit: feature_enabled?(:audit),
+      cache: feature_enabled?(:cache),
+      rate_limit: feature_enabled?(:rate_limit)
+    }
+  end
+
+  @doc """
+  Returns only enabled features.
+
+  ## Examples
+
+      Vaultx.Base.Config.enabled_features()
+      #=> [:telemetry, :retry, :ssl_verify]
+
+  """
+  @spec enabled_features() :: [feature()]
+  def enabled_features do
+    [:telemetry, :logger, :retry, :ssl_verify, :audit, :cache, :rate_limit]
+    |> Enum.filter(&feature_enabled?/1)
+  end
+
+  @doc """
+  Returns only disabled features.
+
+  ## Examples
+
+      Vaultx.Base.Config.disabled_features()
+      #=> [:logger, :audit, :rate_limit]
+
+  """
+  @spec disabled_features() :: [feature()]
+  def disabled_features do
+    [:telemetry, :logger, :retry, :ssl_verify, :audit, :cache, :rate_limit]
+    |> Enum.reject(&feature_enabled?/1)
   end
 end
