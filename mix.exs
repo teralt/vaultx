@@ -213,8 +213,7 @@ defmodule Vaultx.MixProject do
       maintainers: ["fleey"],
       links: %{
         "GitHub" => @source_url,
-        "Changelog" => "https://hexdocs.pm/vaultx/changelog.html",
-        "Documentation" => "https://hexdocs.pm/vaultx"
+        "Changelog" => "https://hexdocs.pm/vaultx/changelog.html"
       }
     ]
   end
