@@ -124,26 +124,26 @@ VaultX follows modern Elixir library conventions:
 
 ```elixir
 # Read from KV v2
-{:ok, data} = VaultX.Client.read("secret/data/myapp/config")
+{:ok, data} = Vaultx.Secrets.KV.V2.read("myapp/config")
 
 # Write secrets
-:ok = VaultX.Client.write("secret/data/myapp/config", %{"key" => "value"})
+{:ok, result} = Vaultx.Secrets.KV.V2.write("myapp/config", %{"key" => "value"})
 
 # List secrets
-{:ok, keys} = VaultX.Client.list("secret/myapp/")
+{:ok, result} = Vaultx.Secrets.KV.V2.list("myapp/")
 
 # Delete secrets
-:ok = VaultX.Client.delete("secret/myapp/config")
+{:ok, :ok} = Vaultx.Secrets.KV.V2.delete("myapp/config")
 ```
 
 ### System Operations
 
 ```elixir
 # Health checks
-{:ok, health} = VaultX.Client.health()
+{:ok, health} = Vaultx.Sys.Health.check()
 
 # Seal status
-{:ok, seal} = VaultX.Client.seal_status()
+{:ok, seal} = Vaultx.Sys.SealStatus.get()
 ```
 
 ### Lease Management
@@ -303,14 +303,14 @@ export VAULTX_TOKEN="hvs.xxxxx"  # or VAULT_TOKEN
 
 ```elixir
 # Read secrets
-{:ok, data} = VaultX.Client.read("secret/data/myapp/config")
+{:ok, data} = Vaultx.Secrets.KV.V2.read("myapp/config")
 
 # Write secrets
-:ok = VaultX.Client.write("secret/data/myapp/config", %{"key" => "value"})
+{:ok, result} = Vaultx.Secrets.KV.V2.write("myapp/config", %{"key" => "value"})
 
 # System operations
-{:ok, health} = VaultX.Client.health()
-{:ok, seal} = VaultX.Client.seal_status()
+{:ok, health} = Vaultx.Sys.Health.check()
+{:ok, seal} = Vaultx.Sys.SealStatus.get()
 ```
 
 ## Recommendations
