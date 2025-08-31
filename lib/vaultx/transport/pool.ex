@@ -68,7 +68,6 @@ defmodule Vaultx.Transport.Pool do
   """
 
   use GenServer
-  require Logger
 
   alias Vaultx.Base.{Config, Error, Logger}
   alias Vaultx.Types
