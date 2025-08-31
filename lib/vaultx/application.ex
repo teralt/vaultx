@@ -8,15 +8,27 @@ defmodule Vaultx.Application do
 
   ## Architecture
 
-  The application uses a simple supervision tree with minimal dependencies:
+  The application uses a robust supervision tree with fault tolerance:
   - HTTP connection pool (Finch) for efficient connection reuse
+  - Optional cache system for performance optimization
   - Optional telemetry handlers for observability
-  - Feature-based conditional startup for lightweight operation
+  - Optional background services (token renewal, rate limiting)
+  - Graceful degradation when optional components fail
 
-  ## Configuration
+  ## Startup Process
 
-  The application respects runtime configuration and can be started with
-  minimal setup. All components are optional and controlled by feature flags.
+  1. Load and validate configuration
+  2. Start core infrastructure (HTTP pool)
+  3. Start optional components based on configuration
+  4. Setup telemetry handlers if enabled
+  5. Log startup summary with component status
+
+  ## Error Handling
+
+  - Core components (HTTP pool) must start successfully
+  - Optional components can fail without stopping the application
+  - Comprehensive logging for troubleshooting
+  - Graceful shutdown with proper cleanup
 
   ## References
 
@@ -26,43 +38,42 @@ defmodule Vaultx.Application do
 
   use Application
 
-  alias Vaultx.Base.{Config, Features, Logger, Security}
+  alias Vaultx.Base.{Config, Logger, Security}
+
+  @type child_spec :: Supervisor.child_spec() | {module(), term()} | module()
+  @type startup_result :: {:ok, pid()} | {:error, term()}
 
   @doc false
   def start(_type, _args) do
-    Logger.info("Starting Vaultx application", %{version: version()})
+    start_time = System.monotonic_time()
 
-    children = build_children()
-
-    opts = [strategy: :one_for_one, name: Vaultx.Supervisor]
-    result = Supervisor.start_link(children, opts)
-
-    if Features.enabled?(:telemetry) do
-      setup_telemetry()
+    with :ok <- log_startup_begin(),
+         {:ok, config} <- load_and_validate_config(),
+         {:ok, children} <- build_children_safely(config),
+         {:ok, supervisor_pid} <- start_supervisor(children),
+         :ok <- setup_post_startup_components(config) do
+      duration = System.monotonic_time() - start_time
+      log_startup_success(children, duration)
+      {:ok, supervisor_pid}
+    else
+      {:error, reason} = error ->
+        duration = System.monotonic_time() - start_time
+        log_startup_failure(reason, duration)
+        error
     end
-
-    Logger.info("Vaultx application started successfully", %{
-      children_count: length(children),
-      features: Features.status()
-    })
-
-    result
   end
 
   @doc false
   def stop(_state) do
     Logger.info("Stopping Vaultx application")
 
-    # NOTE: This cleanup_telemetry call is only executed during application shutdown
-    # when telemetry is enabled. In test environments, applications are rarely
-    # stopped cleanly, and when they are, the telemetry handlers may not be attached.
-    # Testing this requires complex application lifecycle manipulation that doesn't
-    # provide meaningful coverage value for this simple cleanup operation.
-    if Features.enabled?(:telemetry) do
-      # coveralls-ignore-next-line
+    # Cleanup telemetry handlers if enabled
+    if Config.feature_enabled?(:telemetry) do
       cleanup_telemetry()
+      Logger.debug("Telemetry cleanup completed")
     end
 
+    Logger.info("Vaultx application stopped successfully")
     :ok
   end
 
@@ -88,79 +99,107 @@ defmodule Vaultx.Application do
       ssl_verify: config.ssl_verify,
       logger_level: config.logger_level,
       telemetry_enabled: config.telemetry_enabled,
-      features: Features.status()
+      features: Config.features_status()
     }
   end
 
-  # Private functions
+  # Private functions - Startup Process
 
-  defp build_children do
-    config = Config.get()
-    children = []
-
-    # Always start Finch for HTTP connections
-    children = [finch_child_spec(config) | children]
-
-    # Add optional children based on configuration
-    children = maybe_add_telemetry_children(children)
-    children = maybe_add_token_renewal(children, config)
-    children = maybe_add_rate_limiter(children, config)
-
-    Enum.reverse(children)
+  defp log_startup_begin do
+    Logger.info("Starting Vaultx application", %{version: version()})
+    :ok
   end
 
-  defp maybe_add_rate_limiter(children, config) do
-    if config.rate_limit_enabled and config.rate_limit_requests > 0 do
-      [
-        # Rate limiter configuration is only executed when rate limiting is enabled
-        # This is application startup configuration that's difficult to test in isolation
-        {
-          Vaultx.Base.RateLimiter,
-          # coveralls-ignore-next-line
-          [rate: config.rate_limit_requests, burst: config.rate_limit_burst]
-        }
-        | children
-      ]
-    else
-      children
+  defp load_and_validate_config do
+    try do
+      config = Config.get()
+
+      Logger.debug("Configuration loaded successfully", %{
+        url: config.url,
+        features_enabled: length(Config.enabled_features())
+      })
+
+      {:ok, config}
+    rescue
+      error ->
+        Logger.error("Failed to load configuration", error: error)
+        {:error, {:config_load_failed, error}}
     end
   end
 
-  defp maybe_add_token_renewal(children, config) do
-    if config.token_renewal_enabled and Config.get_token() do
-      [{Vaultx.Auth.TokenRenewal, []} | children]
-    else
-      children
+  defp build_children_safely(config) do
+    try do
+      children = build_children(config)
+      Logger.debug("Child specifications built", %{count: length(children)})
+      {:ok, children}
+    rescue
+      error ->
+        Logger.error("Failed to build child specifications", error: error)
+        {:error, {:child_spec_failed, error}}
     end
   end
 
-  defp finch_child_spec(config) do
-    # Configure Finch pools using Vaultx.Base.Config pool settings
-    finch_pools = [
-      {:default,
-       [
-         size: config.pool_size,
-         count: 1,
-         conn_max_idle_time: config.pool_max_idle_time
-       ]}
-    ]
+  defp start_supervisor(children) do
+    opts = [strategy: :one_for_one, name: Vaultx.Supervisor]
 
-    {Finch, name: Vaultx.Finch, pools: finch_pools}
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} = success ->
+        Logger.debug("Supervisor started successfully", %{pid: inspect(pid)})
+        success
+
+      {:error, reason} = error ->
+        Logger.error("Failed to start supervisor", error: reason)
+        error
+    end
   end
 
-  # Removed unused Finch configuration functions
-
-  defp maybe_add_telemetry_children(children) do
-    if Features.enabled?(:telemetry) do
-      # Add telemetry-related children if needed
-      children
-      # coveralls-ignore-start
-      # This else branch is triggered when telemetry is disabled,
-      # which is rare in normal usage as telemetry is enabled by default
-    else
-      children
-      # coveralls-ignore-stop
+  defp setup_post_startup_components(_config) do
+    if Config.feature_enabled?(:telemetry) do
+      setup_telemetry()
+      Logger.debug("Telemetry setup completed")
     end
+
+    :ok
+  end
+
+  defp log_startup_success(children, duration) do
+    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+
+    Logger.info("Vaultx application started successfully", %{
+      children_count: length(children),
+      startup_time_ms: duration_ms,
+      features: Config.features_status()
+    })
+  end
+
+  defp log_startup_failure(reason, duration) do
+    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+
+    Logger.error("Vaultx application startup failed", %{
+      reason: reason,
+      startup_time_ms: duration_ms
+    })
+  end
+
+  # Private functions - Child Management
+
+  defp build_children(config) do
+    []
+    |> add_core_components(config)
+    |> add_optional_components(config)
+    |> Enum.reverse()
+  end
+
+  defp add_core_components(children, config) do
+    # HTTP pool is required for all operations
+    [build_finch_child_spec(config) | children]
+  end
+
+  defp add_optional_components(children, config) do
+    children
+    |> maybe_add_component(:cache_system, config)
+    |> maybe_add_component(:token_renewal, config)
+    |> maybe_add_component(:rate_limiter, config)
   end
 
   defp setup_telemetry do
@@ -180,14 +219,17 @@ defmodule Vaultx.Application do
          ) do
       :ok ->
         Logger.debug("Telemetry handlers attached successfully")
+        :ok
 
       {:error, :telemetry_not_available} ->
         # coveralls-ignore-next-line
         Logger.debug("Telemetry not available, skipping handler setup")
+        :ok
 
       {:error, error} ->
         # coveralls-ignore-next-line
         Logger.warning("Failed to attach telemetry handlers", error: error)
+        :ok
     end
   end
 
@@ -209,6 +251,7 @@ defmodule Vaultx.Application do
         Logger.debug("Telemetry handlers already detached or not found")
     end
 
+    :ok
     # coveralls-ignore-stop
   end
 
@@ -222,5 +265,93 @@ defmodule Vaultx.Application do
 
   defp sanitize_metadata(metadata) do
     Security.sanitize_for_logging(metadata)
+  end
+
+  # New component management functions
+
+  defp maybe_add_component(children, component_type, config) do
+    case should_start_component?(component_type, config) do
+      {true, reason} ->
+        {:ok, child_spec} = build_component_spec(component_type, config)
+
+        Logger.debug("Adding component to supervision tree", %{
+          component: component_type,
+          reason: reason
+        })
+
+        [child_spec | children]
+
+      {false, reason} ->
+        Logger.debug("Skipping component", %{
+          component: component_type,
+          reason: reason
+        })
+
+        children
+    end
+  end
+
+  defp should_start_component?(:cache_system, config) do
+    cond do
+      Mix.env() == :test ->
+        {false, "disabled in test environment"}
+
+      not config.cache_enabled ->
+        {false, "disabled by configuration"}
+
+      true ->
+        {true, "enabled by configuration"}
+    end
+  end
+
+  defp should_start_component?(:token_renewal, config) do
+    cond do
+      not config.token_renewal_enabled ->
+        {false, "disabled by configuration"}
+
+      is_nil(Config.get_token()) ->
+        {false, "no token available"}
+
+      true ->
+        {true, "enabled with valid token"}
+    end
+  end
+
+  defp should_start_component?(:rate_limiter, config) do
+    if config.rate_limit_enabled do
+      {true, "enabled with valid configuration"}
+    else
+      {false, "disabled by configuration"}
+    end
+  end
+
+  defp build_component_spec(:cache_system, _config) do
+    {:ok, {Vaultx.Cache.Manager, []}}
+  end
+
+  defp build_component_spec(:token_renewal, _config) do
+    {:ok, {Vaultx.Auth.TokenRenewal, []}}
+  end
+
+  defp build_component_spec(:rate_limiter, config) do
+    spec = {
+      Vaultx.Base.RateLimiter,
+      [rate: config.rate_limit_requests, burst: config.rate_limit_burst]
+    }
+
+    {:ok, spec}
+  end
+
+  defp build_finch_child_spec(config) do
+    finch_pools = [
+      {:default,
+       [
+         size: config.pool_size,
+         count: 1,
+         conn_max_idle_time: config.pool_max_idle_time
+       ]}
+    ]
+
+    {Finch, name: Vaultx.Finch, pools: finch_pools}
   end
 end

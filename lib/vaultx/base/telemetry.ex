@@ -77,7 +77,7 @@ defmodule Vaultx.Base.Telemetry do
 
   """
 
-  alias Vaultx.Base.Features
+  alias Vaultx.Base.Config
 
   @doc """
   Checks if telemetry is enabled.
@@ -90,7 +90,7 @@ defmodule Vaultx.Base.Telemetry do
   """
   @spec enabled?() :: boolean()
   def enabled? do
-    Features.enabled?(:telemetry)
+    Config.feature_enabled?(:telemetry)
   end
 
   @doc """

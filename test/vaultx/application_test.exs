@@ -40,10 +40,10 @@ defmodule Vaultx.ApplicationTest do
       assert is_map(summary.features)
     end
 
-    test "config_summary integrates with Config and Features modules" do
+    test "config_summary integrates with Config module" do
       summary = Application.config_summary()
       config = Vaultx.Base.Config.get()
-      features = Vaultx.Base.Features.status()
+      features = Vaultx.Base.Config.features_status()
 
       # Should match values from Config module
       assert summary.url == config.url
