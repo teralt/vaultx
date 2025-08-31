@@ -129,7 +129,6 @@ defmodule Vaultx.MixProject do
       groups_for_modules: [
         Core: [
           Vaultx.Application,
-          Vaultx.Client,
           Vaultx.Types
         ],
         "Base Infrastructure": [

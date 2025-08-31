@@ -126,13 +126,10 @@ defmodule Vaultx.Types do
   end
 
   # Auth types
-  @type auth_method :: :token | :userpass | :ldap | :aws | :jwt | :app_role
-  @type credentials :: map()
   @type token :: String.t()
   @type auth_result :: result(token())
 
   # Secrets engine types (updated for new structure)
-  @type engine_type :: :kv | :pki | :transit | :aws
   @type version :: pos_integer()
   @type cas_parameter :: non_neg_integer()
   @type secrets_read_result :: result(SecretData.t())
@@ -156,30 +153,6 @@ defmodule Vaultx.Types do
   @type mount_info :: map()
   @type policy_name :: String.t()
   @type policy_content :: String.t()
-
-  # KV specific types
-  @type kv_version :: 1 | 2
-  @type kv_metadata :: map()
-  @type kv_read_options :: [
-          version: version(),
-          mount_path: mount_path()
-        ]
-  @type kv_write_options :: [
-          cas: cas_parameter(),
-          mount_path: mount_path()
-        ]
-
-  # PKI specific types
-  @type certificate :: String.t()
-  @type private_key :: String.t()
-  @type certificate_request :: map()
-  @type ca_info :: map()
-
-  # Transit specific types
-  @type key_name :: String.t()
-  @type plaintext :: String.t()
-  @type ciphertext :: String.t()
-  @type encryption_context :: map()
 
   # HTTP transport types
   @type http_method :: :get | :post | :put | :delete | :patch | :list
