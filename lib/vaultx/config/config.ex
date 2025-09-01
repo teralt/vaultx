@@ -334,7 +334,7 @@ defmodule Vaultx.Config do
 
   defp extract_warnings_from_issues(issues) do
     issues
-    |> Enum.filter(&(&1.type == :warning))
+    |> Enum.filter(&(&1.type == :warn))
     |> Enum.map(& &1.message)
   end
 

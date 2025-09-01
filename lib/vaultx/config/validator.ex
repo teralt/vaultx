@@ -52,7 +52,7 @@ defmodule Vaultx.Config.Validator do
   alias Vaultx.Base.{Config, Logger}
 
   @type validation_issue :: %{
-          type: :error | :warning | :info,
+          type: Logger.log_level(),
           category: atom(),
           field: String.t(),
           message: String.t(),
@@ -227,7 +227,7 @@ defmodule Vaultx.Config.Validator do
       %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and not is_nil(host) ->
         if String.starts_with?(url, "http://") do
           %{
-            type: :warning,
+            type: :warn,
             category: :security,
             field: "url",
             message: "Using HTTP instead of HTTPS is not recommended for production",
@@ -305,7 +305,7 @@ defmodule Vaultx.Config.Validator do
     cond do
       timeout < @min_timeout ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: field_name,
           message: "#{field_name} is very low (#{timeout}ms), may cause premature timeouts",
@@ -315,7 +315,7 @@ defmodule Vaultx.Config.Validator do
 
       timeout > @max_timeout ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: field_name,
           message: "#{field_name} is very high (#{timeout}ms), may cause slow responses",
@@ -344,7 +344,7 @@ defmodule Vaultx.Config.Validator do
 
       attempts > @max_retry_attempts ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: "retry_attempts",
           message: "Very high retry attempts (#{attempts}) may cause long delays",
@@ -373,7 +373,7 @@ defmodule Vaultx.Config.Validator do
 
       size > @max_pool_size ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: "pool_size",
           message: "Very large pool_size (#{size}) may consume excessive resources",
@@ -400,7 +400,7 @@ defmodule Vaultx.Config.Validator do
   defp validate_ssl_verify(false, url) do
     if String.starts_with?(url || "", "https://") do
       %{
-        type: :warning,
+        type: :warn,
         category: :security,
         field: "ssl_verify",
         message: "SSL verification is disabled for HTTPS connection",
@@ -417,7 +417,7 @@ defmodule Vaultx.Config.Validator do
       nil
     else
       %{
-        type: :warning,
+        type: :warn,
         category: :security,
         field: "tls_min_version",
         message: "TLS version #{version} may not be secure",
@@ -476,7 +476,7 @@ defmodule Vaultx.Config.Validator do
         # Vault service token format
         if String.length(token) < 20 do
           %{
-            type: :warning,
+            type: :warn,
             category: :security,
             field: "token",
             message: "Token appears to be too short for a valid Vault service token",
@@ -488,7 +488,7 @@ defmodule Vaultx.Config.Validator do
       String.starts_with?(token, "s.") ->
         # Legacy Vault token format
         %{
-          type: :warning,
+          type: :warn,
           category: :security,
           field: "token",
           message: "Using legacy token format, consider upgrading to service tokens",
@@ -541,7 +541,7 @@ defmodule Vaultx.Config.Validator do
     # Check if pool size is appropriate for timeout
     if pool_size && timeout && pool_size < 5 && timeout > 30_000 do
       %{
-        type: :warning,
+        type: :warn,
         category: :performance,
         field: "pool_size",
         message: "Small pool size with high timeout may cause request queuing",
@@ -558,7 +558,7 @@ defmodule Vaultx.Config.Validator do
     # Connect timeout should be less than request timeout
     if connect_timeout && request_timeout && connect_timeout >= request_timeout do
       %{
-        type: :warning,
+        type: :warn,
         category: :performance,
         field: "connect_timeout",
         message: "Connect timeout should be less than request timeout",
@@ -579,7 +579,7 @@ defmodule Vaultx.Config.Validator do
 
       if total_retry_time > timeout do
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: "retry_delay",
           message: "Total retry time exceeds request timeout",
@@ -622,7 +622,7 @@ defmodule Vaultx.Config.Validator do
     # L2 cache should typically be larger than L1
     if l1_size > 0 && l2_size > 0 && l1_size >= l2_size do
       %{
-        type: :warning,
+        type: :warn,
         category: :performance,
         field: "cache_l2_max_size",
         message: "L2 cache size should typically be larger than L1 cache size",
@@ -639,7 +639,7 @@ defmodule Vaultx.Config.Validator do
     # L2 cache TTL should typically be longer than L1
     if l1_ttl > 0 && l2_ttl > 0 && l1_ttl >= l2_ttl do
       %{
-        type: :warning,
+        type: :warn,
         category: :performance,
         field: "cache_l2_ttl_default",
         message: "L2 cache TTL should typically be longer than L1 cache TTL",
@@ -658,7 +658,7 @@ defmodule Vaultx.Config.Validator do
     cond do
       l3_enabled && !l2_enabled ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: "cache_l3_enabled",
           message: "L3 cache enabled without L2 cache may not be optimal",
@@ -668,7 +668,7 @@ defmodule Vaultx.Config.Validator do
 
       l2_enabled && !l1_enabled ->
         %{
-          type: :warning,
+          type: :warn,
           category: :performance,
           field: "cache_l2_enabled",
           message: "L2 cache enabled without L1 cache may not be optimal",
@@ -692,7 +692,7 @@ defmodule Vaultx.Config.Validator do
       if logger_level == :debug && production_environment?(config) do
         [
           %{
-            type: :warning,
+            type: :warn,
             category: :security,
             field: "logger_level",
             message: "Debug logging enabled in production environment",

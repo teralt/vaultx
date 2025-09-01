@@ -102,8 +102,7 @@ defmodule Vaultx.Cache.Adapters do
         {:error, "l2_max_size must be positive"}
 
       max_size > 1_000_000 ->
-        {:warning,
-         "l2_max_size is very large (#{max_size}), consider using a distributed adapter"}
+        {:warn, "l2_max_size is very large (#{max_size}), consider using a distributed adapter"}
 
       true ->
         :ok

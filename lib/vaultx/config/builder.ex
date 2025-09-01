@@ -141,7 +141,7 @@ defmodule Vaultx.Config.Builder do
   defp test_defaults do
     %{
       ssl_verify: false,
-      logger_level: :warning,
+      logger_level: :warn,
       telemetry_enabled: false,
       audit_enabled: false,
       rate_limit_enabled: false,
