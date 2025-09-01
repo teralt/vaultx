@@ -497,6 +497,9 @@ defmodule Vaultx.Base.Config do
   @doc """
   Gets the complete configuration with all resolved values.
 
+  This function now uses the modern configuration system with comprehensive
+  validation and analysis capabilities.
+
   ## Examples
 
       iex> config = Vaultx.Base.Config.get()
@@ -506,6 +509,60 @@ defmodule Vaultx.Base.Config do
   """
   @spec get() :: t()
   def get do
+    # Use modern configuration system with fallback
+    case get_modern_config() do
+      {:ok, config} -> config
+      {:error, _reason} -> get_legacy_config()
+    end
+  end
+
+  @doc """
+  Gets configuration using the modern system with comprehensive validation.
+
+  This is the preferred method for new code.
+  """
+  @spec get_modern() :: {:ok, t()} | {:error, Error.t()}
+  def get_modern do
+    get_modern_config()
+  end
+
+  # Modern configuration system
+  defp get_modern_config do
+    try do
+      config =
+        @default_config
+        |> merge_app_config()
+        |> merge_env_config()
+
+      # Use the new validation system
+      case Vaultx.Config.Validator.validate_comprehensive(config) do
+        [] ->
+          {:ok, config}
+
+        issues ->
+          critical_errors = Enum.filter(issues, &(&1.severity == :critical))
+
+          if Enum.empty?(critical_errors) do
+            # Only warnings, proceed with config
+            {:ok, config}
+          else
+            error_messages = Enum.map(critical_errors, & &1.message)
+
+            {:error,
+             Error.new(
+               :configuration_error,
+               "Critical configuration errors: #{Enum.join(error_messages, ", ")}"
+             )}
+          end
+      end
+    rescue
+      error ->
+        {:error, Error.from_exception(error)}
+    end
+  end
+
+  # Legacy fallback
+  defp get_legacy_config do
     @default_config
     |> merge_app_config()
     |> merge_env_config()
@@ -962,6 +1019,9 @@ defmodule Vaultx.Base.Config do
   @doc """
   Performs comprehensive configuration validation and returns detailed diagnostics.
 
+  This function delegates to the modern Vaultx.Config system for all intelligent analysis.
+  Use Vaultx.Config.analyze/0 directly for new code.
+
   ## Examples
 
       iex> Vaultx.Base.Config.diagnose()
@@ -980,44 +1040,8 @@ defmodule Vaultx.Base.Config do
           recommendations: [String.t()]
         }
   def diagnose do
-    warnings = []
-    errors = []
-    recommendations = []
-
-    # Basic validation first, so we can return structured diagnostics even if config is invalid
-    {errors, warnings, recommendations} =
-      case validate() do
-        :ok -> {errors, warnings, recommendations}
-        {:error, validation_errors} -> {validation_errors ++ errors, warnings, recommendations}
-      end
-
-    # If validation already reported errors, return early without calling get()/further checks
-    if errors != [] do
-      %{
-        valid: false,
-        warnings: warnings,
-        errors: errors,
-        recommendations: recommendations
-      }
-    else
-      config = get()
-
-      # Security checks
-      {warnings, recommendations} = check_security_config(config, warnings, recommendations)
-
-      # Performance checks
-      {warnings, recommendations} = check_performance_config(config, warnings, recommendations)
-
-      # SSL/TLS checks
-      {warnings, recommendations} = check_ssl_config(config, warnings, recommendations)
-
-      %{
-        valid: Enum.empty?(errors),
-        warnings: warnings,
-        errors: errors,
-        recommendations: recommendations
-      }
-    end
+    # Delegate to the modern configuration analysis system
+    Vaultx.Config.diagnose()
   end
 
   @doc """
@@ -1322,90 +1346,6 @@ defmodule Vaultx.Base.Config do
       nil -> nil
       value -> String.downcase(value) in ["true", "1", "yes", "on"]
     end
-  end
-
-  # Configuration diagnostic helpers
-
-  defp check_security_config(config, warnings, recommendations) do
-    warnings =
-      cond do
-        not config.ssl_verify and String.starts_with?(config.url, "https://") ->
-          ["SSL verification is disabled for HTTPS connection" | warnings]
-
-        String.starts_with?(config.url, "http://") and
-            not String.contains?(config.url, "localhost") ->
-          ["Using unencrypted HTTP connection to remote server" | warnings]
-
-        true ->
-          warnings
-      end
-
-    recommendations =
-      cond do
-        not config.security_headers_enabled ->
-          ["Consider enabling security headers validation" | recommendations]
-
-        not config.audit_enabled ->
-          ["Consider enabling audit logging for compliance" | recommendations]
-
-        true ->
-          recommendations
-      end
-
-    {warnings, recommendations}
-  end
-
-  defp check_performance_config(config, warnings, recommendations) do
-    warnings =
-      cond do
-        config.timeout > 60_000 ->
-          ["Request timeout is very high (#{config.timeout}ms)" | warnings]
-
-        config.pool_size > 50 ->
-          ["Connection pool size is very large (#{config.pool_size})" | warnings]
-
-        true ->
-          warnings
-      end
-
-    recommendations =
-      cond do
-        config.retry_attempts > 5 ->
-          [
-            "Consider reducing retry attempts (currently #{config.retry_attempts})"
-            | recommendations
-          ]
-
-        not config.metrics_enabled ->
-          ["Consider enabling metrics for performance monitoring" | recommendations]
-
-        true ->
-          recommendations
-      end
-
-    {warnings, recommendations}
-  end
-
-  defp check_ssl_config(config, warnings, recommendations) do
-    warnings =
-      cond do
-        config.tls_min_version == "1.2" and String.starts_with?(config.url, "https://") ->
-          ["Using TLS 1.2 - consider upgrading to TLS 1.3" | warnings]
-
-        true ->
-          warnings
-      end
-
-    recommendations =
-      cond do
-        config.ssl_verify and is_nil(config.cacert) and is_nil(config.cacerts_dir) ->
-          ["Consider specifying CA certificates for better SSL validation" | recommendations]
-
-        true ->
-          recommendations
-      end
-
-    {warnings, recommendations}
   end
 
   # ============================================================================

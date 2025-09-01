@@ -176,7 +176,61 @@ defmodule Vaultx.Config do
     end
   end
 
+  @doc """
+  Provides backward-compatible diagnose function for legacy code.
+
+  This function converts the modern analysis format to the legacy format
+  expected by existing code.
+
+  ## Examples
+
+      iex> Vaultx.Config.diagnose()
+      %{
+        valid: true,
+        warnings: [],
+        errors: [],
+        recommendations: []
+      }
+
+  """
+  @spec diagnose() :: %{
+          valid: boolean(),
+          warnings: [String.t()],
+          errors: [String.t()],
+          recommendations: [String.t()]
+        }
+  def diagnose do
+    {:ok, analysis} = analyze()
+
+    # Convert modern format to legacy format
+    %{
+      valid: analysis.valid,
+      warnings: extract_warnings_from_issues(analysis.issues),
+      errors: extract_errors_from_issues(analysis.issues),
+      recommendations: extract_recommendations_from_suggestions(analysis.suggestions)
+    }
+  end
+
   # Private helper functions
+
+  # Convert modern analysis format to legacy format for backward compatibility
+  defp extract_warnings_from_issues(issues) do
+    issues
+    |> Enum.filter(&(&1.type == :warning))
+    |> Enum.map(& &1.message)
+  end
+
+  defp extract_errors_from_issues(issues) do
+    issues
+    |> Enum.filter(&(&1.type == :error))
+    |> Enum.map(& &1.message)
+  end
+
+  defp extract_recommendations_from_suggestions(suggestions) do
+    suggestions
+    |> Enum.map(&(&1.description || &1.title))
+    |> Enum.reject(&is_nil/1)
+  end
 
   # Get configuration safely without validation to avoid exceptions
   defp get_config_safely do

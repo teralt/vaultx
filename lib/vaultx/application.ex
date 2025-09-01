@@ -112,14 +112,70 @@ defmodule Vaultx.Application do
 
   defp load_and_validate_config do
     try do
-      config = Config.get()
+      # Use modern configuration system with comprehensive validation
+      case Config.get_modern() do
+        {:ok, config} ->
+          Logger.info("Configuration loaded with modern validation", %{
+            url: config.url,
+            features_enabled: length(Config.enabled_features()),
+            validation_system: :modern
+          })
 
-      Logger.debug("Configuration loaded successfully", %{
-        url: config.url,
-        features_enabled: length(Config.enabled_features())
-      })
+          # Run comprehensive analysis for startup diagnostics
+          try do
+            {:ok, analysis} = Vaultx.Config.analyze()
 
-      {:ok, config}
+            Logger.info("Configuration analysis completed", %{
+              performance_score: analysis.performance_score,
+              security_score: analysis.security_score,
+              issues_count: length(analysis.issues),
+              connectivity_status: analysis.connectivity_status
+            })
+
+            # Log warnings if any
+            if not Enum.empty?(analysis.issues) do
+              warnings = Enum.filter(analysis.issues, &(&1.type == :warning))
+              errors = Enum.filter(analysis.issues, &(&1.type == :error))
+
+              if not Enum.empty?(warnings) do
+                Logger.warning("Configuration warnings detected", %{
+                  count: length(warnings),
+                  warnings: Enum.map(warnings, & &1.message)
+                })
+              end
+
+              if not Enum.empty?(errors) do
+                Logger.error("Configuration errors detected", %{
+                  count: length(errors),
+                  errors: Enum.map(errors, & &1.message)
+                })
+              end
+            end
+          rescue
+            analysis_error ->
+              Logger.warning("Configuration analysis failed",
+                error: Exception.message(analysis_error)
+              )
+          end
+
+          {:ok, config}
+
+        {:error, config_error} ->
+          Logger.warning("Modern configuration validation failed, falling back to legacy",
+            error: config_error
+          )
+
+          # Fallback to legacy configuration
+          config = Config.get()
+
+          Logger.debug("Configuration loaded with legacy validation", %{
+            url: config.url,
+            features_enabled: length(Config.enabled_features()),
+            validation_system: :legacy
+          })
+
+          {:ok, config}
+      end
     rescue
       error ->
         Logger.error("Failed to load configuration", error: error)
@@ -159,7 +215,52 @@ defmodule Vaultx.Application do
       Logger.debug("Telemetry setup completed")
     end
 
+    # Perform post-startup configuration health check
+    perform_post_startup_health_check()
+
     :ok
+  end
+
+  defp perform_post_startup_health_check do
+    try do
+      health_status = Vaultx.Config.get_health_status()
+
+      case health_status do
+        :healthy ->
+          Logger.info("Configuration health check: HEALTHY")
+
+        :degraded ->
+          Logger.warning("Configuration health check: DEGRADED - Some issues detected")
+
+        :unhealthy ->
+          Logger.warning("Configuration health check: UNHEALTHY - Multiple issues detected")
+
+        :critical ->
+          Logger.error("Configuration health check: CRITICAL - Serious issues detected")
+      end
+
+      # Run diagnostics if not healthy
+      if health_status != :healthy do
+        try do
+          {:ok, optimization} = Vaultx.Config.validate_and_optimize()
+
+          if not Enum.empty?(optimization.suggestions) do
+            Logger.info("Configuration optimization suggestions available", %{
+              count: length(optimization.suggestions),
+              optimization_potential: optimization.optimization_potential
+            })
+          end
+        rescue
+          error ->
+            Logger.warning("Failed to get optimization suggestions",
+              error: Exception.message(error)
+            )
+        end
+      end
+    rescue
+      error ->
+        Logger.warning("Configuration health check failed", error: Exception.message(error))
+    end
   end
 
   defp log_startup_success(children, duration) do
