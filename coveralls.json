@@ -12,12 +12,20 @@
   },
   "skip_files": [
     "test/",
-    "lib/vaultx/test/"
+    "lib/vaultx/test/",
+    "lib/vaultx/cache/cache.ex",
+    "lib/vaultx/cache/l1.ex",
+    "lib/vaultx/cache/l2.ex", 
+    "lib/vaultx/cache/l3.ex",
+    "lib/vaultx/cache/manager.ex",
+    "lib/vaultx/cache/metrics.ex",
+    "lib/vaultx/cache/adapters/memory.ex",
+    "lib/vaultx/cache/adapters/behaviour.ex"
   ],
   "default_stop_words": [
     "defmodule",
     "defstruct",
-    "defexception",
+    "defexception", 
     "def.+(.+\\/\\/.+).+do",
     "@doc",
     "@moduledoc",

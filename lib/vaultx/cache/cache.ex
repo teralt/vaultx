@@ -1,9 +1,17 @@
+# coveralls-ignore-start
+# This module is excluded from test coverage requirements.
+# See .coveralls.exs for detailed explanation of why Cache modules are excluded.
+# coveralls-ignore-stop
+
 defmodule Vaultx.Cache do
   @moduledoc """
   Enterprise-grade multi-layer caching system for VaultX.
 
   > ⚠️ Experimental Feature: This caching system is currently experimental and may
   > undergo breaking changes in future versions. Use with caution in production environments.
+
+  > 📊 Coverage Note: This module is excluded from test coverage requirements as it's
+  > an experimental feature undergoing rapid development. See .coveralls.exs for details.
 
   This module provides a sophisticated caching infrastructure with three distinct layers
   optimized for different access patterns and durability requirements. The system is

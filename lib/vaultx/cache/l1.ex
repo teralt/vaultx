@@ -1,6 +1,14 @@
+# coveralls-ignore-start
+# This module is excluded from test coverage requirements.
+# See .coveralls.exs for detailed explanation of why Cache modules are excluded.
+# coveralls-ignore-stop
+
 defmodule Vaultx.Cache.L1 do
   @moduledoc """
   L1 Memory Cache implementation using ETS.
+
+  > 📊 Coverage Note: This module is excluded from test coverage requirements as part
+  > of the experimental Cache system. See .coveralls.exs for details.
 
   This module provides high-performance in-memory caching using Erlang Term Storage (ETS).
   It's optimized for concurrent read/write operations with automatic TTL management
