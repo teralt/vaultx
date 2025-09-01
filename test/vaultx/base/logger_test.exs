@@ -1,5 +1,5 @@
 defmodule Vaultx.Base.LoggerTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   import ExUnit.CaptureLog
 
   alias Vaultx.Base.{Logger, Error}

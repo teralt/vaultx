@@ -1,5 +1,5 @@
 defmodule Vaultx.Cache.L1Test do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Vaultx.Cache.L1
 

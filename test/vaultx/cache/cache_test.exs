@@ -1,5 +1,5 @@
 defmodule Vaultx.CacheTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Vaultx.Cache
 

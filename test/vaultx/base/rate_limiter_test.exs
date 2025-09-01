@@ -1,5 +1,5 @@
 defmodule Vaultx.Base.RateLimiterTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   test "consumes tokens and blocks when exhausted" do
     # Stop existing process if running

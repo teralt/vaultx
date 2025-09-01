@@ -1,5 +1,5 @@
 defmodule Vaultx.Cache.MetricsTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Vaultx.Cache.Metrics
 

@@ -1,5 +1,5 @@
 defmodule Vaultx.Base.TelemetryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Vaultx.Base.Telemetry
 

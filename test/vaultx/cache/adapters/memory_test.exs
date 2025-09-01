@@ -1,5 +1,5 @@
 defmodule Vaultx.Cache.Adapters.MemoryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Vaultx.Cache.Adapters.Memory
 
@@ -119,4 +119,3 @@ defmodule Vaultx.Cache.Adapters.MemoryTest do
     assert "k_new" in keys
   end
 end
-
