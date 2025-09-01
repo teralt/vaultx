@@ -41,6 +41,58 @@ Configuration is resolved in the following priority order:
 | `retry_backoff` | `VAULTX_RETRY_BACKOFF` | `exponential` | Backoff strategy (linear/exponential) |
 | `max_retry_delay` | `VAULTX_MAX_RETRY_DELAY` | `30000` | Maximum retry delay (ms) |
 
+### Cache Configuration
+
+VaultX provides a sophisticated multi-layer caching system for improved performance. The cache system consists of three layers: L1 (Memory), L2 (Distributed), and L3 (Persistent).
+
+#### Core Cache Settings
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `cache_enabled` | `VAULTX_CACHE_ENABLED` | `true` | Enable/disable entire cache system |
+| `cache_eviction_policy` | `VAULTX_CACHE_EVICTION_POLICY` | `lru` | Eviction policy (lru, lfu, ttl) |
+| `cache_max_memory_usage` | `VAULTX_CACHE_MAX_MEMORY_USAGE` | `104857600` | Max memory usage in bytes (100MB) |
+| `cache_warming_enabled` | `VAULTX_CACHE_WARMING_ENABLED` | `true` | Enable cache warming |
+| `cache_metrics_enabled` | `VAULTX_CACHE_METRICS_ENABLED` | `true` | Enable metrics collection |
+| `cache_manager_cleanup_interval` | `VAULTX_CACHE_MANAGER_CLEANUP_INTERVAL` | `300000` | Manager cleanup interval (ms) |
+
+#### L1 Memory Cache
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `cache_l1_enabled` | `VAULTX_CACHE_L1_ENABLED` | `true` | Enable L1 memory cache |
+| `cache_l1_max_size` | `VAULTX_CACHE_L1_MAX_SIZE` | `10000` | Maximum number of entries |
+| `cache_l1_ttl_default` | `VAULTX_CACHE_L1_TTL_DEFAULT` | `900000` | Default TTL in ms (15 min) |
+| `cache_l1_cleanup_interval` | `VAULTX_CACHE_L1_CLEANUP_INTERVAL` | `300000` | Cleanup interval in ms (5 min) |
+
+#### L2 Distributed Cache
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `cache_l2_enabled` | `VAULTX_CACHE_L2_ENABLED` | `true` | Enable L2 distributed cache |
+| `cache_l2_adapter` | `VAULTX_CACHE_L2_ADAPTER` | `Vaultx.Cache.Adapters.Memory` | Cache adapter module |
+| `cache_l2_max_size` | `VAULTX_CACHE_L2_MAX_SIZE` | `50000` | Maximum number of entries |
+| `cache_l2_ttl_default` | `VAULTX_CACHE_L2_TTL_DEFAULT` | `3600000` | Default TTL in ms (1 hour) |
+| `cache_l2_cleanup_interval` | `VAULTX_CACHE_L2_CLEANUP_INTERVAL` | `600000` | Cleanup interval in ms (10 min) |
+
+#### L3 Persistent Cache
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `cache_l3_enabled` | `VAULTX_CACHE_L3_ENABLED` | `false` | Enable L3 persistent cache |
+| `cache_l3_storage_path` | `VAULTX_CACHE_L3_STORAGE_PATH` | `/tmp/vaultx_cache` | Storage directory path |
+| `cache_l3_ttl_default` | `VAULTX_CACHE_L3_TTL_DEFAULT` | `86400000` | Default TTL in ms (24 hours) |
+| `cache_l3_cleanup_interval` | `VAULTX_CACHE_L3_CLEANUP_INTERVAL` | `3600000` | Cleanup interval in ms (1 hour) |
+| `cache_l3_encryption` | `VAULTX_CACHE_L3_ENCRYPTION` | `false` | Enable AES-256-GCM encryption |
+
+#### L3 Encryption Configuration
+
+When L3 encryption is enabled, the encryption key is sourced in priority order:
+
+1. **Environment Variable**: `VAULTX_L3_ENCRYPTION_KEY` (Base64-encoded 256-bit key)
+2. **Key File**: `.encryption_key` in the storage directory (auto-generated)
+3. **Fallback**: In-memory generation (not recommended for production)
+
 ### SSL/TLS Configuration
 
 | Setting | Environment Variable | Default | Description |
@@ -112,6 +164,16 @@ export VAULTX_CACERTS_DIR="/etc/ssl/certs"
 export VAULTX_TIMEOUT="60000"
 export VAULTX_RETRY_ATTEMPTS="5"
 export VAULTX_POOL_SIZE="20"
+
+# Cache configuration
+export VAULTX_CACHE_ENABLED="true"
+export VAULTX_CACHE_L1_ENABLED="true"
+export VAULTX_CACHE_L1_MAX_SIZE="20000"
+export VAULTX_CACHE_L2_ENABLED="true"
+export VAULTX_CACHE_L3_ENABLED="true"
+export VAULTX_CACHE_L3_STORAGE_PATH="/var/cache/vaultx"
+export VAULTX_CACHE_L3_ENCRYPTION="true"
+export VAULTX_L3_ENCRYPTION_KEY="$(openssl rand -base64 32)"
 ```
 
 ### Application Configuration
@@ -119,11 +181,28 @@ export VAULTX_POOL_SIZE="20"
 ```elixir
 # config/config.exs
 config :vaultx,
+  # Core settings
   url: "https://vault.example.com:8200",
   timeout: 30_000,
   retry_attempts: 3,
   ssl_verify: true,
-  pool_size: 10
+  pool_size: 10,
+
+  # Cache configuration
+  cache_enabled: true,
+  cache_l1_enabled: true,
+  cache_l1_max_size: 20_000,
+  cache_l1_ttl_default: 900_000,  # 15 minutes
+
+  cache_l2_enabled: true,
+  cache_l2_adapter: Vaultx.Cache.Adapters.Memory,
+  cache_l2_max_size: 50_000,
+  cache_l2_ttl_default: 3_600_000,  # 1 hour
+
+  cache_l3_enabled: true,
+  cache_l3_storage_path: "/var/cache/vaultx",
+  cache_l3_ttl_default: 86_400_000,  # 24 hours
+  cache_l3_encryption: true
 ```
 
 ### Configuration Validation
@@ -202,10 +281,21 @@ config :vaultx,
 
 ### Common Issues
 
+#### Core Configuration Issues
+
 1. **SSL Certificate Errors**: Check `cacert` and `ssl_verify` settings
 2. **Connection Timeouts**: Adjust `timeout` and `connect_timeout`
 3. **Pool Exhaustion**: Increase `pool_size`
 4. **Authentication Failures**: Verify `token` and `namespace` settings
+
+#### Cache Configuration Issues
+
+1. **Cache Permission Errors**: Ensure cache directory has proper permissions (0700)
+2. **L3 Encryption Key Issues**: Verify `VAULTX_L3_ENCRYPTION_KEY` is properly set
+3. **High Memory Usage**: Adjust `cache_l1_max_size` and `cache_l2_max_size`
+4. **Slow Cache Performance**: Check disk I/O for L3 cache, consider SSD storage
+5. **Cache Directory Full**: Monitor disk space and adjust cleanup intervals
+6. **Encryption Key Mismatch**: Ensure key consistency across application restarts
 
 ### Diagnostic Tools
 
@@ -220,6 +310,25 @@ end
 
 # Print configuration summary
 Vaultx.Base.Config.print_summary()
+
+# Cache-specific diagnostics
+{:ok, cache_stats} = Vaultx.Cache.stats()
+IO.inspect(cache_stats, label: "Cache Statistics")
+
+# Check cache health
+case Process.whereis(Vaultx.Cache.Manager) do
+  nil -> IO.puts("Cache system is not running")
+  pid -> IO.puts("Cache system is running (PID: #{inspect(pid)})")
+end
+
+# Validate cache configuration
+config = Vaultx.Base.Config.get()
+if config.cache_l3_enabled and config.cache_l3_encryption do
+  case System.get_env("VAULTX_L3_ENCRYPTION_KEY") do
+    nil -> IO.puts("Warning: L3 encryption enabled but no key provided")
+    _key -> IO.puts("L3 encryption key configured")
+  end
+end
 ```
 
 ## Migration Guide
