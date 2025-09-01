@@ -509,8 +509,8 @@ defmodule Vaultx.Base.Config do
   """
   @spec get() :: t()
   def get do
-    # Use modern configuration system with fallback
-    case get_modern_config() do
+    # Delegate to modern configuration system for consistency
+    case get_modern() do
       {:ok, config} -> config
       {:error, _reason} -> get_legacy_config()
     end
@@ -523,45 +523,11 @@ defmodule Vaultx.Base.Config do
   """
   @spec get_modern() :: {:ok, t()} | {:error, Error.t()}
   def get_modern do
-    get_modern_config()
+    # Delegate to the modern configuration builder
+    Vaultx.Config.build_config()
   end
 
-  # Modern configuration system
-  defp get_modern_config do
-    try do
-      config =
-        @default_config
-        |> merge_app_config()
-        |> merge_env_config()
-
-      # Use the new validation system
-      case Vaultx.Config.Validator.validate_comprehensive(config) do
-        [] ->
-          {:ok, config}
-
-        issues ->
-          critical_errors = Enum.filter(issues, &(&1.severity == :critical))
-
-          if Enum.empty?(critical_errors) do
-            # Only warnings, proceed with config
-            {:ok, config}
-          else
-            error_messages = Enum.map(critical_errors, & &1.message)
-
-            {:error,
-             Error.new(
-               :configuration_error,
-               "Critical configuration errors: #{Enum.join(error_messages, ", ")}"
-             )}
-          end
-      end
-    rescue
-      error ->
-        {:error, Error.from_exception(error)}
-    end
-  end
-
-  # Legacy fallback
+  # Legacy fallback - simple validation without comprehensive analysis
   defp get_legacy_config do
     @default_config
     |> merge_app_config()
@@ -1405,33 +1371,24 @@ defmodule Vaultx.Base.Config do
   end
 
   @doc """
-  Returns the status of all features.
+  Returns comprehensive feature status with intelligent recommendations.
+
+  This now delegates to the modern Vaultx.Config system for enhanced analysis.
 
   ## Examples
 
-      iex> Vaultx.Base.Config.features_status()
-      %{
-        telemetry: true,
-        logger: true,
-        retry: true,
-        ssl_verify: true,
-        audit: true,
-        cache: true,
-        rate_limit: false
-      }
+      Vaultx.Base.Config.features_status()
+      #=> %{enabled: [:telemetry, :retry], disabled: [:logger], recommendations: [...]}
 
   """
-  @spec features_status() :: feature_config()
+  @spec features_status() :: %{
+          enabled: [atom()],
+          disabled: [atom()],
+          recommendations: [String.t()]
+        }
   def features_status do
-    %{
-      telemetry: feature_enabled?(:telemetry),
-      logger: feature_enabled?(:logger),
-      retry: feature_enabled?(:retry),
-      ssl_verify: feature_enabled?(:ssl_verify),
-      audit: feature_enabled?(:audit),
-      cache: feature_enabled?(:cache),
-      rate_limit: feature_enabled?(:rate_limit)
-    }
+    # Delegate to modern system for enhanced feature analysis
+    Vaultx.Config.features_status()
   end
 
   @doc """
@@ -1445,8 +1402,8 @@ defmodule Vaultx.Base.Config do
   """
   @spec enabled_features() :: [feature()]
   def enabled_features do
-    [:telemetry, :logger, :retry, :ssl_verify, :audit, :cache, :rate_limit]
-    |> Enum.filter(&feature_enabled?/1)
+    # Use modern feature analysis
+    features_status().enabled
   end
 
   @doc """
@@ -1460,7 +1417,7 @@ defmodule Vaultx.Base.Config do
   """
   @spec disabled_features() :: [feature()]
   def disabled_features do
-    [:telemetry, :logger, :retry, :ssl_verify, :audit, :cache, :rate_limit]
-    |> Enum.reject(&feature_enabled?/1)
+    # Use modern feature analysis
+    features_status().disabled
   end
 end

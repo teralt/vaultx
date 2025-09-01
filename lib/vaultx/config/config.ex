@@ -211,6 +211,71 @@ defmodule Vaultx.Config do
     }
   end
 
+  @doc """
+  Modern feature management with intelligent analysis.
+
+  This provides enhanced feature detection and recommendations.
+  """
+  @spec feature_enabled?(atom()) :: boolean()
+  def feature_enabled?(feature) when is_atom(feature) do
+    # Delegate to Base.Config for now, but could be enhanced with analysis
+    Config.feature_enabled?(feature)
+  end
+
+  @doc """
+  Gets comprehensive feature status with recommendations.
+  """
+  @spec features_status() :: %{
+          enabled: [atom()],
+          disabled: [atom()],
+          recommendations: [String.t()]
+        }
+  def features_status do
+    all_features = [:telemetry, :logger, :retry, :ssl_verify, :cache, :rate_limit]
+
+    enabled = Enum.filter(all_features, &feature_enabled?/1)
+    disabled = all_features -- enabled
+
+    # Generate recommendations based on environment and configuration
+    recommendations = generate_feature_recommendations(enabled, disabled)
+
+    %{
+      enabled: enabled,
+      disabled: disabled,
+      recommendations: recommendations
+    }
+  end
+
+  defp generate_feature_recommendations(enabled, _disabled) do
+    recommendations = []
+
+    # Recommend telemetry for production
+    recommendations =
+      if :telemetry not in enabled and Mix.env() == :prod do
+        ["Enable telemetry for production monitoring" | recommendations]
+      else
+        recommendations
+      end
+
+    # Recommend SSL verification
+    recommendations =
+      if :ssl_verify not in enabled do
+        ["Enable SSL verification for security" | recommendations]
+      else
+        recommendations
+      end
+
+    # Recommend caching for performance
+    recommendations =
+      if :cache not in enabled do
+        ["Enable caching for better performance" | recommendations]
+      else
+        recommendations
+      end
+
+    recommendations
+  end
+
   # Private helper functions
 
   # Convert modern analysis format to legacy format for backward compatibility
@@ -232,15 +297,56 @@ defmodule Vaultx.Config do
     |> Enum.reject(&is_nil/1)
   end
 
-  # Get configuration safely without validation to avoid exceptions
-  defp get_config_safely do
+  @doc """
+  Builds configuration using modern validation and error handling.
+
+  This delegates to Base.Config but adds comprehensive validation.
+  """
+  @spec build_config() :: {:ok, Config.t()} | {:error, Error.t()}
+  def build_config do
     try do
-      # Try to use Config.get() first, but catch any validation exceptions
-      Config.get()
+      # Use Base.Config's proven configuration building logic
+      config = Config.get()
+
+      # Add comprehensive validation on top
+      case Validator.validate_comprehensive(config) do
+        [] ->
+          {:ok, config}
+
+        issues ->
+          critical_errors = Enum.filter(issues, &(&1.severity == :critical))
+
+          if Enum.empty?(critical_errors) do
+            # Only warnings, proceed with config
+            Logger.warning("Configuration has warnings", issues: length(issues))
+            {:ok, config}
+          else
+            error_messages = Enum.map(critical_errors, & &1.message)
+
+            {:error,
+             Error.new(
+               :configuration_error,
+               "Critical configuration errors: #{Enum.join(error_messages, ", ")}"
+             )}
+          end
+      end
     rescue
-      _error ->
-        # If Config.get() fails, build a safe fallback config
-        Logger.warning("Configuration validation failed, using fallback configuration")
+      error ->
+        {:error, Error.from_exception(error)}
+    end
+  end
+
+  @doc """
+  Gets configuration safely, with fallback to basic config on errors.
+  """
+  @spec get_config_safely() :: Config.t()
+  def get_config_safely do
+    case build_config() do
+      {:ok, config} ->
+        config
+
+      {:error, _reason} ->
+        Logger.warning("Modern configuration build failed, using fallback")
         build_fallback_config()
     end
   end
