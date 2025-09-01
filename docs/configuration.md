@@ -1,24 +1,30 @@
-# VaultX Configuration
+# VaultX Configuration Guide
 
-VaultX provides comprehensive configuration management with support for environment variables, application configuration, and runtime validation. This guide covers all available configuration options and best practices.
+VaultX provides a modern, flexible configuration system with comprehensive validation and optimization capabilities.
 
 ## Configuration Philosophy
 
-VaultX follows modern Elixir library conventions:
-
-- **Stateless**: No GenServer or caching, pure function-based configuration
 - **Dynamic**: Configuration changes take effect immediately
-- **Hierarchical**: Environment variables override application configuration
-- **Validated**: Comprehensive validation using NimbleOptions
-- **Secure**: Built-in security validation and best practices
+- **Hierarchical**: Environment variables → Application config → Defaults
+- **Validated**: Comprehensive validation with detailed feedback
+- **Secure**: Built-in security best practices and recommendations
+- **Observable**: Configuration analysis and health monitoring
 
 ## Configuration Sources
 
-Configuration is resolved in the following priority order:
+Configuration is resolved in priority order:
 
-1. **Environment variables** (highest priority)
-2. **Application configuration**
-3. **Default values** (lowest priority)
+1. **Environment Variables** (highest priority)
+2. **Application Configuration** (mix config)
+3. **Default Values** (lowest priority)
+
+## Important Notes
+
+> [!WARNING]
+> **Experimental Features**: The intelligent caching system is currently experimental and may undergo breaking changes in future versions. While functional and tested, use with caution in production environments.
+>
+> [!NOTE]
+> **Configuration Analysis**: All configuration validation, analysis, and optimization features are stable and production-ready. They provide valuable insights without affecting runtime behavior.
 
 ## Core Configuration
 
@@ -38,60 +44,8 @@ Configuration is resolved in the following priority order:
 | `connect_timeout` | `VAULTX_CONNECT_TIMEOUT` | `10000` | Connection timeout (ms) |
 | `retry_attempts` | `VAULTX_RETRY_ATTEMPTS` | `3` | Number of retry attempts |
 | `retry_delay` | `VAULTX_RETRY_DELAY` | `1000` | Initial retry delay (ms) |
-| `retry_backoff` | `VAULTX_RETRY_BACKOFF` | `exponential` | Backoff strategy (linear/exponential) |
+| `retry_backoff` | `VAULTX_RETRY_BACKOFF` | `exponential` | Backoff strategy |
 | `max_retry_delay` | `VAULTX_MAX_RETRY_DELAY` | `30000` | Maximum retry delay (ms) |
-
-### Cache Configuration
-
-VaultX provides a sophisticated multi-layer caching system for improved performance. The cache system consists of three layers: L1 (Memory), L2 (Distributed), and L3 (Persistent).
-
-#### Core Cache Settings
-
-| Setting | Environment Variable | Default | Description |
-|---------|---------------------|---------|-------------|
-| `cache_enabled` | `VAULTX_CACHE_ENABLED` | `true` | Enable/disable entire cache system |
-| `cache_eviction_policy` | `VAULTX_CACHE_EVICTION_POLICY` | `lru` | Eviction policy (lru, lfu, ttl) |
-| `cache_max_memory_usage` | `VAULTX_CACHE_MAX_MEMORY_USAGE` | `104857600` | Max memory usage in bytes (100MB) |
-| `cache_warming_enabled` | `VAULTX_CACHE_WARMING_ENABLED` | `true` | Enable cache warming |
-| `cache_metrics_enabled` | `VAULTX_CACHE_METRICS_ENABLED` | `true` | Enable metrics collection |
-| `cache_manager_cleanup_interval` | `VAULTX_CACHE_MANAGER_CLEANUP_INTERVAL` | `300000` | Manager cleanup interval (ms) |
-
-#### L1 Memory Cache
-
-| Setting | Environment Variable | Default | Description |
-|---------|---------------------|---------|-------------|
-| `cache_l1_enabled` | `VAULTX_CACHE_L1_ENABLED` | `true` | Enable L1 memory cache |
-| `cache_l1_max_size` | `VAULTX_CACHE_L1_MAX_SIZE` | `10000` | Maximum number of entries |
-| `cache_l1_ttl_default` | `VAULTX_CACHE_L1_TTL_DEFAULT` | `900000` | Default TTL in ms (15 min) |
-| `cache_l1_cleanup_interval` | `VAULTX_CACHE_L1_CLEANUP_INTERVAL` | `300000` | Cleanup interval in ms (5 min) |
-
-#### L2 Distributed Cache
-
-| Setting | Environment Variable | Default | Description |
-|---------|---------------------|---------|-------------|
-| `cache_l2_enabled` | `VAULTX_CACHE_L2_ENABLED` | `true` | Enable L2 distributed cache |
-| `cache_l2_adapter` | `VAULTX_CACHE_L2_ADAPTER` | `Vaultx.Cache.Adapters.Memory` | Cache adapter module |
-| `cache_l2_max_size` | `VAULTX_CACHE_L2_MAX_SIZE` | `50000` | Maximum number of entries |
-| `cache_l2_ttl_default` | `VAULTX_CACHE_L2_TTL_DEFAULT` | `3600000` | Default TTL in ms (1 hour) |
-| `cache_l2_cleanup_interval` | `VAULTX_CACHE_L2_CLEANUP_INTERVAL` | `600000` | Cleanup interval in ms (10 min) |
-
-#### L3 Persistent Cache
-
-| Setting | Environment Variable | Default | Description |
-|---------|---------------------|---------|-------------|
-| `cache_l3_enabled` | `VAULTX_CACHE_L3_ENABLED` | `false` | Enable L3 persistent cache |
-| `cache_l3_storage_path` | `VAULTX_CACHE_L3_STORAGE_PATH` | `/tmp/vaultx_cache` | Storage directory path |
-| `cache_l3_ttl_default` | `VAULTX_CACHE_L3_TTL_DEFAULT` | `86400000` | Default TTL in ms (24 hours) |
-| `cache_l3_cleanup_interval` | `VAULTX_CACHE_L3_CLEANUP_INTERVAL` | `3600000` | Cleanup interval in ms (1 hour) |
-| `cache_l3_encryption` | `VAULTX_CACHE_L3_ENCRYPTION` | `false` | Enable AES-256-GCM encryption |
-
-#### L3 Encryption Configuration
-
-When L3 encryption is enabled, the encryption key is sourced in priority order:
-
-1. **Environment Variable**: `VAULTX_L3_ENCRYPTION_KEY` (Base64-encoded 256-bit key)
-2. **Key File**: `.encryption_key` in the storage directory (auto-generated)
-3. **Fallback**: In-memory generation (not recommended for production)
 
 ### SSL/TLS Configuration
 
@@ -99,7 +53,7 @@ When L3 encryption is enabled, the encryption key is sourced in priority order:
 |---------|---------------------|---------|-------------|
 | `ssl_verify` | `VAULTX_SSL_VERIFY` | `true` | Enable SSL verification |
 | `cacert` | `VAULTX_CACERT` or `VAULT_CACERT` | `nil` | CA certificate file path |
-| `cacerts_dir` | `VAULTX_CACERTS_DIR` | `nil` | Directory of CA certificates (loaded into :cacerts) |
+| `cacerts_dir` | `VAULTX_CACERTS_DIR` | `nil` | Directory of CA certificates |
 | `client_cert` | `VAULTX_CLIENT_CERT` or `VAULT_CLIENT_CERT` | `nil` | Client certificate (mTLS) |
 | `client_key` | `VAULTX_CLIENT_KEY` or `VAULT_CLIENT_KEY` | `nil` | Client private key (mTLS) |
 | `tls_server_name` | `VAULTX_TLS_SERVER_NAME` | `nil` | TLS SNI server name |
@@ -112,7 +66,7 @@ When L3 encryption is enabled, the encryption key is sourced in priority order:
 | `pool_size` | `VAULTX_POOL_SIZE` | `10` | Connection pool size |
 | `pool_max_idle_time` | `VAULTX_POOL_MAX_IDLE_TIME` | `300000` | Max idle time (ms) |
 
-### Logging & Telemetry
+### Features & Observability
 
 | Setting | Environment Variable | Default | Description |
 |---------|---------------------|---------|-------------|
@@ -120,30 +74,20 @@ When L3 encryption is enabled, the encryption key is sourced in priority order:
 | `telemetry_enabled` | `VAULTX_TELEMETRY_ENABLED` | `true` | Enable telemetry |
 | `audit_enabled` | `VAULTX_AUDIT_ENABLED` | `false` | Enable audit logging |
 | `metrics_enabled` | `VAULTX_METRICS_ENABLED` | `true` | Enable metrics |
+| `cache_enabled` | `VAULTX_CACHE_ENABLED` | `true` | Enable intelligent caching (experimental) |
 
 ### Security & Compliance
 
 | Setting | Environment Variable | Default | Description |
 |---------|---------------------|---------|-------------|
 | `rate_limit_enabled` | `VAULTX_RATE_LIMIT_ENABLED` | `false` | Enable rate limiting |
-| `rate_limit_requests` | `VAULTX_RATE_LIMIT_REQUESTS` | `100` | Requests per second (per-bucket: host\|namespace) |
-| `rate_limit_burst` | `VAULTX_RATE_LIMIT_BURST` | `0` | Additional burst tokens allowed |
+| `rate_limit_requests` | `VAULTX_RATE_LIMIT_REQUESTS` | `100` | Requests per second |
+| `rate_limit_burst` | `VAULTX_RATE_LIMIT_BURST` | `0` | Additional burst tokens |
 | `token_renewal_enabled` | `VAULTX_TOKEN_RENEWAL_ENABLED` | `true` | Auto token renewal |
 | `token_renewal_threshold` | `VAULTX_TOKEN_RENEWAL_THRESHOLD` | `80` | Renewal threshold (%) |
-| `security_headers_enabled` | `VAULTX_SECURITY_HEADERS_ENABLED` | `false` | Validate security headers (non-fatal warnings) |
+| `security_headers_enabled` | `VAULTX_SECURITY_HEADERS_ENABLED` | `true` | Validate security headers |
 
-## Usage Examples
-
-### Basic Configuration
-
-```elixir
-# Get complete configuration
-config = Vaultx.Base.Config.get()
-
-# Get specific values
-url = Vaultx.Base.Config.get_url()
-timeout = Vaultx.Base.Config.get_timeout()
-```
+## Configuration Examples
 
 ### Environment Variables
 
@@ -158,22 +102,16 @@ export VAULTX_SSL_VERIFY="true"
 export VAULTX_CACERT="/etc/ssl/certs/vault-ca.pem"
 export VAULTX_CLIENT_CERT="/etc/ssl/certs/client.pem"
 export VAULTX_CLIENT_KEY="/etc/ssl/private/client-key.pem"
-export VAULTX_CACERTS_DIR="/etc/ssl/certs"
 
 # Performance tuning
 export VAULTX_TIMEOUT="60000"
 export VAULTX_RETRY_ATTEMPTS="5"
 export VAULTX_POOL_SIZE="20"
 
-# Cache configuration
+# Features
 export VAULTX_CACHE_ENABLED="true"
-export VAULTX_CACHE_L1_ENABLED="true"
-export VAULTX_CACHE_L1_MAX_SIZE="20000"
-export VAULTX_CACHE_L2_ENABLED="true"
-export VAULTX_CACHE_L3_ENABLED="true"
-export VAULTX_CACHE_L3_STORAGE_PATH="/var/cache/vaultx"
-export VAULTX_CACHE_L3_ENCRYPTION="true"
-export VAULTX_L3_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+export VAULTX_TELEMETRY_ENABLED="true"
+export VAULTX_AUDIT_ENABLED="true"
 ```
 
 ### Application Configuration
@@ -188,51 +126,79 @@ config :vaultx,
   ssl_verify: true,
   pool_size: 10,
 
-  # Cache configuration
-  cache_enabled: true,
-  cache_l1_enabled: true,
-  cache_l1_max_size: 20_000,
-  cache_l1_ttl_default: 900_000,  # 15 minutes
+  # Features
+  cache_enabled: true,  # Experimental feature
+  telemetry_enabled: true,
+  audit_enabled: false,
 
-  cache_l2_enabled: true,
-  cache_l2_adapter: Vaultx.Cache.Adapters.Memory,
-  cache_l2_max_size: 50_000,
-  cache_l2_ttl_default: 3_600_000,  # 1 hour
+  # Security
+  token_renewal_enabled: true,
+  token_renewal_threshold: 80,
+  rate_limit_enabled: false
+```
 
-  cache_l3_enabled: true,
-  cache_l3_storage_path: "/var/cache/vaultx",
-  cache_l3_ttl_default: 86_400_000,  # 24 hours
-  cache_l3_encryption: true
+### Environment-Specific Configuration
+
+```elixir
+# config/dev.exs
+config :vaultx,
+  url: "http://localhost:8200",
+  ssl_verify: false,
+  logger_level: :debug,
+  audit_enabled: false
+
+# config/prod.exs
+config :vaultx,
+  url: {:system, "VAULTX_URL"},
+  ssl_verify: true,
+  logger_level: :info,
+  audit_enabled: true,
+  rate_limit_enabled: true
+```
+
+## Configuration Management
+
+### Basic Usage
+
+```elixir
+# Get complete configuration
+config = Vaultx.Config.get()
+
+# Get specific values
+url = Vaultx.Config.get_value(:url)
+timeout = Vaultx.Config.get_value(:timeout, 60_000)
+
+# Get multiple values efficiently
+%{url: url, timeout: timeout} = Vaultx.Config.get_values([:url, :timeout])
 ```
 
 ### Configuration Validation
 
 ```elixir
-# Validate configuration
-case Vaultx.Base.Config.validate() do
+# Basic validation
+case Vaultx.Config.validate() do
   :ok -> :ok
   {:error, errors} -> handle_errors(errors)
 end
 
-# Get detailed diagnostics
-diagnostics = Vaultx.Base.Config.diagnose()
-IO.inspect(diagnostics)
+# Comprehensive analysis
+{:ok, analysis} = Vaultx.Config.analyze()
+IO.inspect(analysis.performance_score)  # 85.5
+IO.inspect(analysis.security_score)     # 92.0
+IO.inspect(analysis.suggestions)        # Optimization recommendations
 ```
 
-### Convenience Functions
+### Health Monitoring
 
 ```elixir
-# Check SSL configuration
-Vaultx.Base.Config.ssl_configured?()
-Vaultx.Base.Config.mtls_configured?()
+# Check configuration health
+health_status = Vaultx.Config.health_status()
+# Returns: :healthy | :degraded | :unhealthy | :critical
 
-# Get grouped configurations
-retry_config = Vaultx.Base.Config.get_retry_config()
-pool_config = Vaultx.Base.Config.get_pool_config()
-# => %{size: 10, max_idle_time: 300_000}
-
-# Print configuration summary
-Vaultx.Base.Config.print_summary()
+# Get optimization suggestions
+{:ok, optimization} = Vaultx.Config.validate_and_optimize()
+IO.inspect(optimization.optimization_potential)  # :low | :medium | :high
+IO.inspect(optimization.suggestions)             # List of improvements
 ```
 
 ## Best Practices
@@ -244,95 +210,69 @@ Vaultx.Base.Config.print_summary()
 3. **Use strong TLS versions** (prefer TLS 1.3)
 4. **Implement mutual TLS** for high-security environments
 5. **Enable audit logging** for compliance requirements
+6. **Use short-lived tokens** with automatic renewal
 
 ### Performance
 
 1. **Tune connection pools** based on your workload
 2. **Configure appropriate timeouts** for your network
 3. **Use exponential backoff** for retry strategies
-4. **Enable metrics** for monitoring
-5. **Consider rate limiting** to protect Vault
+4. **Enable intelligent caching** for read-heavy workloads
+5. **Monitor performance metrics** regularly
 
 ### Reliability
 
 1. **Configure retry attempts** appropriately
 2. **Set reasonable timeouts** to avoid hanging requests
 3. **Enable token renewal** for long-running applications
-4. **Monitor configuration diagnostics** regularly
-
-### Development vs Production
-
-```elixir
-# Development
-config :vaultx,
-  url: "http://localhost:8200",
-  ssl_verify: false,
-  logger_level: :debug
-
-# Production
-config :vaultx,
-  url: {:system, "VAULTX_URL"},
-  ssl_verify: true,
-  logger_level: :info,
-  audit_enabled: true
-```
+4. **Monitor configuration health** regularly
+5. **Use rate limiting** to protect Vault from overload
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Core Configuration Issues
-
 1. **SSL Certificate Errors**: Check `cacert` and `ssl_verify` settings
 2. **Connection Timeouts**: Adjust `timeout` and `connect_timeout`
 3. **Pool Exhaustion**: Increase `pool_size`
 4. **Authentication Failures**: Verify `token` and `namespace` settings
-
-#### Cache Configuration Issues
-
-1. **Cache Permission Errors**: Ensure cache directory has proper permissions (0700)
-2. **L3 Encryption Key Issues**: Verify `VAULTX_L3_ENCRYPTION_KEY` is properly set
-3. **High Memory Usage**: Adjust `cache_l1_max_size` and `cache_l2_max_size`
-4. **Slow Cache Performance**: Check disk I/O for L3 cache, consider SSD storage
-5. **Cache Directory Full**: Monitor disk space and adjust cleanup intervals
-6. **Encryption Key Mismatch**: Ensure key consistency across application restarts
+5. **Rate Limiting**: Check Vault server rate limits and adjust client settings
 
 ### Diagnostic Tools
 
 ```elixir
-# Run comprehensive diagnostics
-diagnostics = Vaultx.Base.Config.diagnose()
+# Run comprehensive analysis
+{:ok, analysis} = Vaultx.Config.analyze()
+IO.inspect(analysis, label: "Configuration Analysis")
 
-# Check for warnings and recommendations
-if not Enum.empty?(diagnostics.warnings) do
-  IO.puts("Warnings: #{inspect(diagnostics.warnings)}")
-end
+# Check health status
+health = Vaultx.Config.health_status()
+IO.puts("Configuration health: #{health}")
 
-# Print configuration summary
-Vaultx.Base.Config.print_summary()
-
-# Cache-specific diagnostics
-{:ok, cache_stats} = Vaultx.Cache.stats()
-IO.inspect(cache_stats, label: "Cache Statistics")
-
-# Check cache health
-case Process.whereis(Vaultx.Cache.Manager) do
-  nil -> IO.puts("Cache system is not running")
-  pid -> IO.puts("Cache system is running (PID: #{inspect(pid)})")
-end
-
-# Validate cache configuration
-config = Vaultx.Base.Config.get()
-if config.cache_l3_enabled and config.cache_l3_encryption do
-  case System.get_env("VAULTX_L3_ENCRYPTION_KEY") do
-    nil -> IO.puts("Warning: L3 encryption enabled but no key provided")
-    _key -> IO.puts("L3 encryption key configured")
-  end
-end
+# Get optimization suggestions
+{:ok, optimization} = Vaultx.Config.validate_and_optimize()
+Enum.each(optimization.suggestions, fn suggestion ->
+  IO.puts("#{suggestion.priority}: #{suggestion.title}")
+  IO.puts("  #{suggestion.description}")
+end)
 ```
 
-## Migration Guide
+### Configuration Templates
 
-### From Previous Versions
+VaultX provides configuration templates for different environments:
 
-The Vaultx library was only officially released to the public starting from version v0.6.0, so there is currently no relevant content for this entry.
+```elixir
+# Generate development template
+dev_template = Vaultx.Config.Templates.generate(:development)
+
+# Generate production template with specific features
+prod_template = Vaultx.Config.Templates.generate(:production,
+  features: [:cache, :telemetry, :audit],
+  security_level: :enterprise
+)
+
+# Generate migration template
+migration = Vaultx.Config.Templates.generate_migration(:development, :production)
+```
+
+For advanced configuration topics, see the [Advanced Configuration](docs/advanced-configuration.md) guide.
