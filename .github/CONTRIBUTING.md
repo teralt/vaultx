@@ -56,28 +56,28 @@ VaultX uses [mise](https://mise.jdx.dev/) for consistent development environment
 
 1. **Fork and clone the repository:**
 
-   ```bash
-   git clone https://github.com/your-username/vaultx.git
-   cd vaultx
-   ```
+```bash
+git clone https://github.com/your-username/vaultx.git
+cd vaultx
+```
 
-2. **Install required versions (if using mise):**
+1. **Install required versions (if using mise):**
 
-   ```bash
-   mise install
-   ```
+```bash
+mise install
+```
 
-3. **Install dependencies:**
+1. **Install dependencies:**
 
-   ```bash
-   mix deps.get
-   ```
+```bash
+mix deps.get
+```
 
-4. **Compile the project:**
+1. **Compile the project:**
 
-   ```bash
-   mix compile
-   ```
+```bash
+mix compile
+```
 
 #### Alternative Setup (without mise)
 
@@ -109,7 +109,7 @@ mise run check
 mise run release-check
 ```
 
-#### Using mix directly
+#### Alternative: Using mix directly
 
 ```bash
 # Run tests with proper environment
@@ -155,46 +155,46 @@ end
 
 **Important**: Always document why code is excluded from coverage in both the code comment and your PR description.
 
-### Development Workflow
+### Step-by-Step Development Workflow
 
 1. **Create a feature branch:**
 
-   ```bash
-   git checkout -b feat/your-feature-name
-   # or
-   git checkout -b fix/issue-description
-   ```
+```bash
+git checkout -b feat/your-feature-name
+# or
+git checkout -b fix/issue-description
+```
 
-2. **Make your changes** and write comprehensive tests
+1. **Make your changes** and write comprehensive tests
 
-3. **Run tests and ensure coverage:**
+1. **Run tests and ensure coverage:**
 
-   ```bash
-   # Run tests with coverage check
-   MIX_ENV=test mix test --cover
+```bash
+# Run tests with coverage check
+MIX_ENV=test mix test --cover
 
-   # Or generate detailed HTML report for analysis
-   MIX_ENV=test mix coveralls.html
-   ```
+# Or generate detailed HTML report for analysis
+MIX_ENV=test mix coveralls.html
+```
 
-4. **Format your code:**
+1. **Format your code:**
 
-   ```bash
-   mix format
-   ```
+```bash
+mix format
+```
 
-5. **Commit your changes with conventional commit format:**
+1. **Commit your changes with conventional commit format:**
 
-   ```bash
-   git add .
-   git commit -m "feat: add new authentication method"
-   # or
-   git commit -m "fix: resolve token renewal issue"
-   # or
-   git commit -m "docs: update configuration examples"
-   ```
+```bash
+git add .
+git commit -m "feat: add new authentication method"
+# or
+git commit -m "fix: resolve token renewal issue"
+# or
+git commit -m "docs: update configuration examples"
+```
 
-6. **Push and create a pull request**
+1. **Push and create a pull request**
 
 ## Contributing to Documentation
 
@@ -249,7 +249,7 @@ mix compile
 
 ## Common Development Tasks
 
-### Using mise (Recommended)
+### Quick Commands with mise (Recommended)
 
 - **Run tests**: `mise run test`
 - **Run tests with coverage**: `mise run coverage`
@@ -260,7 +260,7 @@ mix compile
 - **Comprehensive checks**: `mise run check`
 - **Release readiness**: `mise run release-check`
 
-### Using mix directly
+### Manual Commands with mix
 
 - **Run specific test file**: `MIX_ENV=test mix test test/path/to/test_file.exs`
 - **Run tests with coverage**: `MIX_ENV=test mix test --cover`
