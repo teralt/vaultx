@@ -200,6 +200,7 @@ defmodule Vaultx.Application do
     |> maybe_add_component(:cache_system, config)
     |> maybe_add_component(:token_renewal, config)
     |> maybe_add_component(:rate_limiter, config)
+    |> maybe_add_component(:config_hot_reload, config)
   end
 
   defp setup_telemetry do
@@ -325,6 +326,21 @@ defmodule Vaultx.Application do
     end
   end
 
+  defp should_start_component?(:config_hot_reload, config) do
+    hot_reload_enabled = Map.get(config, :hot_reload_enabled, false)
+
+    cond do
+      Mix.env() == :test ->
+        {false, "disabled in test environment"}
+
+      not hot_reload_enabled ->
+        {false, "disabled by configuration"}
+
+      true ->
+        {true, "enabled for runtime configuration updates"}
+    end
+  end
+
   defp build_component_spec(:cache_system, _config) do
     {:ok, {Vaultx.Cache.Manager, []}}
   end
@@ -340,6 +356,10 @@ defmodule Vaultx.Application do
     }
 
     {:ok, spec}
+  end
+
+  defp build_component_spec(:config_hot_reload, _config) do
+    {:ok, {Vaultx.Config.HotReload, []}}
   end
 
   defp build_finch_child_spec(config) do
