@@ -34,10 +34,8 @@ defmodule Vaultx.Base.Config do
 
   """
 
-  alias Vaultx.Base.{Error, Logger}
+  alias Vaultx.Base.Error
   alias Vaultx.Config
-
-  require Logger
 
   # Type definitions for backward compatibility
   @type retry_backoff :: :linear | :exponential

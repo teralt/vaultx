@@ -17,10 +17,6 @@ defmodule Vaultx.Config.Builder do
 
   """
 
-  alias Vaultx.Base.Logger
-
-  require Logger
-
   @doc """
   Builds the complete configuration from all sources.
 

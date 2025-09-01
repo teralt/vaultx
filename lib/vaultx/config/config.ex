@@ -32,8 +32,6 @@ defmodule Vaultx.Config do
   alias Vaultx.Base.Logger
   alias Vaultx.Config.{Builder, Diagnostics, Optimizer, Validator}
 
-  require Logger
-
   @type config_analysis :: %{
           valid: boolean(),
           issues: [map()],

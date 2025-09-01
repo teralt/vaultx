@@ -25,8 +25,6 @@ defmodule Vaultx.Application do
 
   alias Vaultx.Base.{Config, Logger}
 
-  require Logger
-
   @doc false
   def start(_type, _args) do
     Logger.info("[Vaultx] Starting application")
