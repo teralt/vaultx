@@ -112,6 +112,9 @@ defmodule Vaultx.Application do
 
   defp load_and_validate_config do
     try do
+      # Set startup context to skip connectivity tests
+      Process.put(:vaultx_startup_context, :application_startup)
+
       # Use modern configuration system with comprehensive validation
       case Config.get_modern() do
         {:ok, config} ->
@@ -233,10 +236,7 @@ defmodule Vaultx.Application do
           Logger.warning("Configuration health check: DEGRADED - Some issues detected")
 
         :unhealthy ->
-          Logger.warning("Configuration health check: UNHEALTHY - Multiple issues detected")
-
-        :critical ->
-          Logger.error("Configuration health check: CRITICAL - Serious issues detected")
+          Logger.error("Configuration health check: UNHEALTHY - Multiple issues detected")
       end
 
       # Run diagnostics if not healthy
