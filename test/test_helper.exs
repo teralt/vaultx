@@ -16,7 +16,7 @@ Application.put_env(:vaultx, :timeout, 30000)
 # Disable retries in tests to maximize speed
 Application.put_env(:vaultx, :retry_attempts, 0)
 Application.put_env(:vaultx, :retry_delay, 1)
-Application.put_env(:vaultx, :logger_level, :error)
+Application.put_env(:vaultx, :logger_level, :info)
 Application.put_env(:vaultx, :telemetry_enabled, false)
 
 # Override HTTP client to use mock

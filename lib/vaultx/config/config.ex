@@ -243,6 +243,10 @@ defmodule Vaultx.Config do
        valid: analysis.valid,
        issues: analysis.issues,
        suggestions: analysis.suggestions,
+       performance_score: analysis.performance_score,
+       security_score: analysis.security_score,
+       connectivity_status: analysis.connectivity_status,
+       environment_compatibility: analysis.environment_compatibility,
        optimization_potential: optimization_potential.score,
        performance_impact: determine_performance_impact(optimization_potential),
        estimated_improvement: optimization_potential.recommendation
