@@ -25,7 +25,7 @@ VaultX follows conventional commit types for organizing contributions:
 
 For any contribution that involves functional changes or substantial modifications:
 
-1. **Tests Must Pass**: Ensure `mix test` passes completely
+1. **Tests Must Pass**: Ensure `MIX_ENV=test mix test` passes completely
 2. **Test Coverage**: Maintain project test coverage at **99% or above**
 3. **Coverage Exclusions**: If you need to exclude code from coverage using `# coveralls-ignore`, you must:
    - Add a comment explaining why the code is excluded
@@ -112,11 +112,14 @@ mise run release-check
 #### Using mix directly
 
 ```bash
-# Run tests
-mix test
+# Run tests with proper environment
+MIX_ENV=test mix test
 
 # Test coverage analysis
-mix test --cover
+MIX_ENV=test mix test --cover
+
+# Generate detailed HTML coverage report
+MIX_ENV=test mix coveralls.html
 
 # Format code
 mix format
@@ -130,8 +133,14 @@ mix format --check-formatted
 VaultX maintains a strict 99% test coverage requirement. To check coverage:
 
 ```bash
-mix test --cover
+# Basic coverage check
+MIX_ENV=test mix test --cover
+
+# Generate detailed HTML coverage report (recommended for development)
+MIX_ENV=test mix coveralls.html
 ```
+
+The HTML report will be generated in `cover/excoveralls.html` and provides detailed line-by-line coverage information to help identify uncovered code.
 
 If you need to exclude specific lines from coverage, use `# coveralls-ignore`:
 
@@ -161,7 +170,11 @@ end
 3. **Run tests and ensure coverage:**
 
    ```bash
-   mix test --cover
+   # Run tests with coverage check
+   MIX_ENV=test mix test --cover
+
+   # Or generate detailed HTML report for analysis
+   MIX_ENV=test mix coveralls.html
    ```
 
 4. **Format your code:**
@@ -249,8 +262,9 @@ mix compile
 
 ### Using mix directly
 
-- **Run specific test file**: `mix test test/path/to/test_file.exs`
-- **Run tests with coverage**: `mix test --cover`
+- **Run specific test file**: `MIX_ENV=test mix test test/path/to/test_file.exs`
+- **Run tests with coverage**: `MIX_ENV=test mix test --cover`
+- **Generate HTML coverage report**: `MIX_ENV=test mix coveralls.html`
 - **Check formatting**: `mix format --check-formatted`
 - **Generate documentation**: `mix docs`
 
