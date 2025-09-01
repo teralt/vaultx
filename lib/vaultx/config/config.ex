@@ -291,8 +291,20 @@ defmodule Vaultx.Config do
   """
   @spec feature_enabled?(atom()) :: boolean()
   def feature_enabled?(feature) when is_atom(feature) do
-    # Check if feature is enabled
-    has_value?(feature) and get_value(feature, false)
+    # Map feature names to configuration keys
+    config_key =
+      case feature do
+        :telemetry -> :telemetry_enabled
+        :audit -> :audit_enabled
+        :metrics -> :metrics_enabled
+        :cache -> :cache_enabled
+        :rate_limit -> :rate_limit_enabled
+        :token_renewal -> :token_renewal_enabled
+        :security_headers -> :security_headers_enabled
+        _ -> feature
+      end
+
+    get_value(config_key, false)
   end
 
   @doc """
