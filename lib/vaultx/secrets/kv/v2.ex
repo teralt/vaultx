@@ -84,6 +84,7 @@ defmodule Vaultx.Secrets.KV.V2 do
   @behaviour Vaultx.Secrets.KV.Behaviour
 
   alias Vaultx.Base.{Error, Logger, Security, Telemetry}
+  alias Vaultx.Cache
   alias Vaultx.Secrets.KV.Behaviour.{ListResult, SecretData, WriteResult}
   alias Vaultx.Transport.HTTP
 
@@ -94,6 +95,7 @@ defmodule Vaultx.Secrets.KV.V2 do
          :ok <- validate_opts(opts) do
       mount_path = Keyword.get(opts, :mount_path, @default_mount_path)
       version = Keyword.get(opts, :version)
+      use_cache = Keyword.get(opts, :cache, true)
 
       metadata = %{
         engine: :kv,
@@ -101,85 +103,78 @@ defmodule Vaultx.Secrets.KV.V2 do
         operation: :read,
         path: path,
         mount_path: mount_path,
-        requested_version: version
+        requested_version: version,
+        cache_enabled: use_cache
       }
 
       Logger.debug("Reading KV v2 secret", metadata)
       Telemetry.operation_start(metadata)
 
-      start_time = System.monotonic_time()
+      # Try cache first if enabled
+      if use_cache do
+        cache_key = build_cache_key(mount_path, path, version)
 
-      # Build query parameters
-      query_params = if version, do: [version: version], else: []
-
-      case HTTP.get("#{mount_path}/data/#{path}?#{URI.encode_query(query_params)}", opts) do
-        {:ok, %{status: 200, body: %{"data" => response_data}}} ->
-          duration = System.monotonic_time() - start_time
-
-          secret_data = %SecretData{
-            data: response_data["data"] || %{},
-            metadata: response_data["metadata"],
-            version: response_data["metadata"]["version"],
-            created_time: parse_datetime(response_data["metadata"]["created_time"]),
-            deletion_time: parse_datetime(response_data["metadata"]["deletion_time"]),
-            destroyed: response_data["metadata"]["destroyed"] || false
-          }
-
-          Logger.debug(
-            "Successfully read KV v2 secret",
-            Map.merge(metadata, %{
-              data_keys: Map.keys(secret_data.data),
-              actual_version: secret_data.version
-            })
-          )
-
-          Telemetry.operation_success(duration, metadata)
-
-          {:ok, secret_data}
-
-        {:ok, %{status: 404}} ->
-          duration = System.monotonic_time() - start_time
-
-          error =
-            if version do
-              Error.new(:not_found, "Version #{version} not found at path: #{path}")
-            else
-              Error.new(:not_found, "Secret not found at path: #{path}")
-            end
-
-          Logger.debug("KV v2 secret not found", Map.put(metadata, :error, error))
-          Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
-
-          {:error, error}
-
-        {:ok, %{status: status, body: body}} ->
-          duration = System.monotonic_time() - start_time
-
-          error =
-            Error.new(:server_error, "Unexpected response: #{status}", details: %{body: body})
-
-          Logger.error(
-            "KV v2 read failed with unexpected status",
-            Map.merge(metadata, %{status: status, error: error})
-          )
-
-          Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
-
-          {:error, error}
-
-        {:error, reason} ->
-          duration = System.monotonic_time() - start_time
-          error = Error.new(:network_error, "HTTP request failed", details: %{reason: reason})
-
-          Logger.error(
-            "KV v2 read transport error",
-            Map.merge(metadata, %{reason: reason, error: error})
-          )
-
-          Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
-
-          {:error, error}
+        Cache.get_or_compute(
+          cache_key,
+          fn ->
+            do_read_from_vault(mount_path, path, version, opts)
+          end,
+          ttl: :timer.minutes(15)
+        )
+      else
+        do_read_from_vault(mount_path, path, version, opts)
       end
+    end
+  end
+
+  # Private helper functions for caching
+
+  defp build_cache_key(mount_path, path, version) do
+    # Use a more robust key format to avoid conflicts
+    base_key = "kv2:#{mount_path}:#{path}"
+
+    if version do
+      # Use a separator that's unlikely to appear in paths
+      "#{base_key}|version:#{version}"
+    else
+      "#{base_key}|latest"
+    end
+  end
+
+  defp do_read_from_vault(mount_path, path, version, opts) do
+    # Build query parameters
+    query_params = if version, do: [version: version], else: []
+
+    case HTTP.get("#{mount_path}/data/#{path}?#{URI.encode_query(query_params)}", opts) do
+      {:ok, %{status: 200, body: %{"data" => response_data}}} ->
+        secret_data = %SecretData{
+          data: response_data["data"] || %{},
+          metadata: response_data["metadata"],
+          version: response_data["metadata"]["version"],
+          created_time: parse_datetime(response_data["metadata"]["created_time"]),
+          deletion_time: parse_datetime(response_data["metadata"]["deletion_time"]),
+          destroyed: response_data["metadata"]["destroyed"] || false
+        }
+
+        {:ok, secret_data}
+
+      {:ok, %{status: 404}} ->
+        error =
+          if version do
+            Error.new(:not_found, "Version #{version} not found at path: #{path}")
+          else
+            Error.new(:not_found, "Secret not found at path: #{path}")
+          end
+
+        {:error, error}
+
+      {:ok, %{status: status, body: body}} ->
+        error = Error.new(:server_error, "Unexpected response: #{status}", details: %{body: body})
+        {:error, error}
+
+      {:error, reason} ->
+        error = Error.new(:network_error, "HTTP request failed", details: %{reason: reason})
+        {:error, error}
     end
   end
 
@@ -230,6 +225,9 @@ defmodule Vaultx.Secrets.KV.V2 do
           )
 
           Telemetry.operation_success(duration, metadata)
+
+          # Clear cache entries for this path (all versions)
+          clear_cache_for_path(mount_path, path)
 
           {:ok, write_result}
 
@@ -327,6 +325,9 @@ defmodule Vaultx.Secrets.KV.V2 do
 
           Logger.debug("Successfully deleted KV v2 secret", metadata)
           Telemetry.operation_success(duration, metadata)
+
+          # Clear cache entries for this path
+          clear_cache_for_path(mount_path, path)
 
           :ok
 
@@ -1002,4 +1003,17 @@ defmodule Vaultx.Secrets.KV.V2 do
 
   defp validate_opts(_),
     do: {:error, Error.new(:invalid_request, "Options must be a keyword list")}
+
+  # Cache management functions
+
+  defp clear_cache_for_path(mount_path, path) do
+    # Clear cache entries for this path (all versions)
+    pattern = "kv2:#{mount_path}:#{path}|*"
+
+    case Process.whereis(Vaultx.Cache.Manager) do
+      # Cache not running
+      nil -> :ok
+      _pid -> Cache.clear(pattern)
+    end
+  end
 end
