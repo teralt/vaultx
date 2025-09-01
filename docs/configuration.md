@@ -274,5 +274,3 @@ prod_template = Vaultx.Config.Templates.generate(:production,
 # Generate migration template
 migration = Vaultx.Config.Templates.generate_migration(:development, :production)
 ```
-
-For advanced configuration topics, see the [Advanced Configuration](docs/advanced-configuration.md) guide.
