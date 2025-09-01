@@ -33,6 +33,7 @@ defmodule Vaultx.Config do
 
   alias Vaultx.Base.{Config, Error, Logger}
   alias Vaultx.Config.{Diagnostics, Optimizer, Validator}
+  alias Vaultx.Sys.Health
 
   @type config_analysis :: %{
           valid: boolean(),
@@ -429,24 +430,42 @@ defmodule Vaultx.Config do
     end
   end
 
-  defp test_vault_health_endpoint(scheme, host, port, timeout) do
+  defp test_vault_health_endpoint(_scheme, _host, _port, timeout) do
     try do
-      # Build health endpoint URL
-      _health_url = "#{scheme}://#{host}:#{port}/v1/sys/health"
+      # Use the real Vault Health API instead of placeholder code
+      case Health.check(timeout: timeout, standbyok: true, perfstandbyok: true) do
+        {:ok, health_status} ->
+          # Determine status based on actual health response
+          cond do
+            health_status.sealed ->
+              {:error, :sealed}
 
-      # Simple HTTP GET request simulation
-      # In a real implementation, you would use HTTPoison or similar
-      case test_tcp_connection(host, port, timeout) do
-        :ok ->
-          # If TCP connection works, assume health endpoint is accessible
-          {:ok, :available}
+            not health_status.initialized ->
+              {:error, :not_initialized}
 
-        {:error, reason} ->
-          {:error, reason}
+            health_status.removed_from_cluster ->
+              {:error, :removed_from_cluster}
+
+            not health_status.ha_connection_healthy ->
+              {:error, :ha_unhealthy}
+
+            true ->
+              {:ok, :available}
+          end
+
+        {:error, %Error{type: :connection_failed}} ->
+          {:error, :connection_failed}
+
+        {:error, %Error{type: :timeout}} ->
+          {:error, :timeout}
+
+        {:error, error} ->
+          {:error, error}
       end
     rescue
       error ->
-        {:error, error}
+        Logger.warning("Health endpoint test failed", error: Exception.message(error))
+        {:error, :health_check_failed}
     end
   end
 
