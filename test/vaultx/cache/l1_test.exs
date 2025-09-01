@@ -13,7 +13,14 @@ defmodule Vaultx.Cache.L1Test do
 
   setup do
     stop_server()
-    {:ok, _pid} = L1.start_link(%{l1_max_size: 5, l1_cleanup_interval: 50})
+
+    # Wait a bit for process to fully stop
+    Process.sleep(10)
+
+    case L1.start_link(%{l1_max_size: 5, l1_cleanup_interval: 50}) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
 
     on_exit(fn ->
       stop_server()

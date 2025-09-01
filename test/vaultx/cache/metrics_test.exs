@@ -10,7 +10,14 @@ defmodule Vaultx.Cache.MetricsTest do
 
   setup do
     stop_server()
-    {:ok, _pid} = Metrics.start_link()
+
+    # Wait a bit for process to fully stop
+    Process.sleep(10)
+
+    case Metrics.start_link() do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
 
     on_exit(fn -> stop_server() end)
     :ok
