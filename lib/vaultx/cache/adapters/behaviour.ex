@@ -19,14 +19,14 @@ defmodule Vaultx.Cache.Adapters.Behaviour do
   @doc """
   Get a value from the cache.
   """
-  @callback get(cache_key(), adapter_state()) :: 
-    {:ok, cache_value()} | {:error, :not_found} | {:error, term()}
+  @callback get(cache_key(), adapter_state()) ::
+              {:ok, cache_value()} | {:error, :not_found} | {:error, term()}
 
   @doc """
   Put a value into the cache with TTL.
   """
-  @callback put(cache_key(), cache_value(), ttl(), adapter_state()) :: 
-    :ok | {:error, term()}
+  @callback put(cache_key(), cache_value(), ttl(), adapter_state()) ::
+              :ok | {:error, term()}
 
   @doc """
   Delete a value from the cache.

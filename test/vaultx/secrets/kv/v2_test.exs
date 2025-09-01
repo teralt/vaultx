@@ -208,7 +208,8 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, %{"data" => %{"created_time" => now, "deletion_time" => nil}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{metadata: %{"created_time" => ^now}}} = V2.read_metadata("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{metadata: %{"created_time" => ^now}}} =
+               V2.read_metadata("p")
 
       expect_any(:get, 404, %{})
 
@@ -263,7 +264,8 @@ defmodule Vaultx.Secrets.KV.V2Test do
         }
       })
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} = V2.read("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} =
+               V2.read("p")
     end
 
     test "list/2, delete/2 validate opts type" do
@@ -348,7 +350,8 @@ defmodule Vaultx.Secrets.KV.V2Test do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "3"]}} = V2.list_versions("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "3"]}} =
+               V2.list_versions("p")
 
       # 404 error
       expect_get(404, %{})
@@ -378,7 +381,8 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, body)
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "2", "10"]}} = V2.list_versions("p")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "2", "10"]}} =
+               V2.list_versions("p")
     end
   end
 

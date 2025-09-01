@@ -40,7 +40,9 @@ defmodule Vaultx.Secrets.KV.V1Test do
     test "writes secret successfully" do
       expect_post(200, %{})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{} = res} = V1.write("myapp/config", %{"k" => "v"})
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{} = res} =
+               V1.write("myapp/config", %{"k" => "v"})
+
       assert res.version == nil
       refute res.destroyed
     end

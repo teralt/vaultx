@@ -107,7 +107,8 @@ defmodule Vaultx.Secrets.KV.KVTest do
         assert String.contains?(url, "/v1/kv1/")
       end)
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"x" => "1"}}} = KV.read("app/x", mount_path: "kv1")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"x" => "1"}}} =
+               KV.read("app/x", mount_path: "kv1")
 
       # 3) write
       expect_post(200, %{})
@@ -117,7 +118,8 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # 4) list
       expect_get(200, %{"data" => %{"keys" => ["a/"]}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a/"]}} = KV.list("app/", mount_path: "kv1")
+      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a/"]}} =
+               KV.list("app/", mount_path: "kv1")
 
       # 5) delete
       expect_delete(204, %{})
