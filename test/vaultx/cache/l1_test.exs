@@ -24,15 +24,29 @@ defmodule Vaultx.Cache.L1Test do
 
     on_exit(fn ->
       stop_server()
-      # ensure ETS tables are dropped
-      case :ets.whereis(@table_name) do
-        :undefined -> :ok
-        tid -> :ets.delete(tid)
+      # ensure ETS tables are dropped safely
+      try do
+        case :ets.whereis(@table_name) do
+          :undefined ->
+            :ok
+
+          tid when is_reference(tid) ->
+            if :ets.info(tid) != :undefined, do: :ets.delete(tid)
+        end
+      rescue
+        ArgumentError -> :ok
       end
 
-      case :ets.whereis(@access_table) do
-        :undefined -> :ok
-        tid -> :ets.delete(tid)
+      try do
+        case :ets.whereis(@access_table) do
+          :undefined ->
+            :ok
+
+          tid when is_reference(tid) ->
+            if :ets.info(tid) != :undefined, do: :ets.delete(tid)
+        end
+      rescue
+        ArgumentError -> :ok
       end
     end)
 
