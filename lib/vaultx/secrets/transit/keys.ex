@@ -219,7 +219,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key creation failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key creation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -289,7 +289,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{name}' not found")
 
-        Logger.warning("Transit key not found", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -298,7 +298,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key read failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -380,7 +380,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{name}' not found")
 
-        Logger.warning(
+        Logger.warn(
           "Transit key not found for config update",
           Map.put(metadata, :error, error)
         )
@@ -393,7 +393,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key config update failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key config update failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -536,7 +536,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{name}' not found")
 
-        Logger.warning("Transit key not found for rotation", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for rotation", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -545,7 +545,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key rotation failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key rotation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -615,7 +615,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{name}' not found")
 
-        Logger.warning("Transit key not found for deletion", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for deletion", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -624,7 +624,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key deletion failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key deletion failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -705,7 +705,7 @@ defmodule Vaultx.Secrets.Transit.Keys do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Transit key listing failed", Map.put(metadata, :error, error))
+        Logger.warn("Transit key listing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

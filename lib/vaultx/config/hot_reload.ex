@@ -379,7 +379,7 @@ defmodule Vaultx.Config.HotReload do
           critical_issues = Enum.filter(issues, &(&1.severity == :critical))
 
           if Enum.empty?(critical_issues) do
-            Logger.warning("Configuration has non-critical issues", issues: length(issues))
+            Logger.warn("Configuration has non-critical issues", issues: length(issues))
             {:ok, state}
           else
             {:error,

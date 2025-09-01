@@ -339,7 +339,7 @@ defmodule Vaultx.Sys.Policies do
     # Prevent deletion of system policies
     if name in ["root", "default"] do
       error = Error.new(:invalid_request, "Cannot delete system ACL policy: #{name}")
-      Logger.warning("Attempted to delete system ACL policy", Map.put(metadata, :error, error))
+      Logger.warn("Attempted to delete system ACL policy", Map.put(metadata, :error, error))
       {:error, error}
     else
       case HTTP.delete("sys/policies/acl/#{name}", opts) do

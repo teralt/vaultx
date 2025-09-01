@@ -183,7 +183,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate issuance failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate issuance failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -266,7 +266,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate signing failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate signing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -335,7 +335,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate revocation failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate revocation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -498,7 +498,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate read failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -572,7 +572,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate listing failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate listing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -652,7 +652,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate verbatim signing failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate verbatim signing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -733,7 +733,7 @@ defmodule Vaultx.Secrets.PKI.Certificates do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Certificate revocation with key failed", Map.put(metadata, :error, error))
+        Logger.warn("Certificate revocation with key failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

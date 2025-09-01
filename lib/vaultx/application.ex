@@ -126,7 +126,7 @@ defmodule Vaultx.Application do
     if Config.feature_enabled?(:telemetry) do
       case setup_telemetry() do
         :ok -> Logger.debug("[Vaultx] Telemetry enabled")
-        _error -> Logger.warning("[Vaultx] Telemetry setup failed")
+        _error -> Logger.warn("[Vaultx] Telemetry setup failed")
       end
     end
   end

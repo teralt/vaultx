@@ -223,7 +223,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI role creation failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI role creation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -270,7 +270,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI role read failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI role read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -322,7 +322,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI role deletion failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI role deletion failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -373,7 +373,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI role listing failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI role listing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -489,7 +489,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("CRL read failed", Map.put(metadata, :error, error))
+        Logger.warn("CRL read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -534,7 +534,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("CRL rotation failed", Map.put(metadata, :error, error))
+        Logger.warn("CRL rotation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -582,7 +582,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI URLs configuration read failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI URLs configuration read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -633,7 +633,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI URLs configuration write failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI URLs configuration write failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -687,7 +687,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI tidy operation failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI tidy operation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -735,7 +735,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI tidy status check failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI tidy status check failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -780,7 +780,7 @@ defmodule Vaultx.Secrets.PKI do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("PKI tidy operation cancellation failed", Map.put(metadata, :error, error))
+        Logger.warn("PKI tidy operation cancellation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

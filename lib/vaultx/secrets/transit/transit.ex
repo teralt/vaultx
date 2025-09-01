@@ -223,7 +223,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for signing", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for signing", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -232,7 +232,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Data signing failed", Map.put(metadata, :error, error))
+        Logger.warn("Data signing failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -280,7 +280,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for verification", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for verification", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -289,7 +289,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Signature verification failed", Map.put(metadata, :error, error))
+        Logger.warn("Signature verification failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -339,7 +339,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for HMAC", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for HMAC", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -348,7 +348,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("HMAC generation failed", Map.put(metadata, :error, error))
+        Logger.warn("HMAC generation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -396,7 +396,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning(
+        Logger.warn(
           "Transit key not found for HMAC verification",
           Map.put(metadata, :error, error)
         )
@@ -409,7 +409,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("HMAC verification failed", Map.put(metadata, :error, error))
+        Logger.warn("HMAC verification failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -460,7 +460,7 @@ defmodule Vaultx.Secrets.Transit do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Random data generation failed", Map.put(metadata, :error, error))
+        Logger.warn("Random data generation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

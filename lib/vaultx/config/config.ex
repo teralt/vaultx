@@ -83,7 +83,7 @@ defmodule Vaultx.Config do
       Map.get(config, key, default)
     rescue
       error ->
-        Logger.warning("Failed to get configuration value for #{key}",
+        Logger.warn("Failed to get configuration value for #{key}",
           error: Exception.message(error)
         )
 
@@ -107,7 +107,7 @@ defmodule Vaultx.Config do
       Map.take(config, keys)
     rescue
       error ->
-        Logger.warning("Failed to get multiple configuration values",
+        Logger.warn("Failed to get multiple configuration values",
           error: Exception.message(error)
         )
 
