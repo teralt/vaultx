@@ -7,11 +7,11 @@ defmodule Vaultx.Config do
 
   ## Architecture
 
-  - **Config**: Main configuration interface (this module)
-  - **Builder**: Configuration building and environment merging
-  - **Validator**: Configuration validation and error checking
-  - **Optimizer**: Performance and security optimization suggestions
-  - **Diagnostics**: Health monitoring and diagnostics
+  - Config: Main configuration interface (this module)
+  - Builder: Configuration building and environment merging
+  - Validator: Configuration validation and error checking
+  - Optimizer: Performance and security optimization suggestions
+  - Diagnostics: Health monitoring and diagnostics
 
   ## Usage Examples
 

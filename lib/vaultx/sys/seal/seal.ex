@@ -22,17 +22,17 @@ defmodule Vaultx.Sys.Seal do
 
   ## Important Security Notes
 
-  **Restricted Endpoint**
+  Restricted Endpoint
   - Must be called from the root namespace
   - Requires root policy or sudo capability on the path
   - Cannot be undone without unsealing process
 
-  **High Availability Considerations**
+  High Availability Considerations
   - Only active nodes can be sealed via API
   - Standby nodes should be restarted to achieve same effect
   - Sealing active node may trigger failover to standby
 
-  **Operational Impact**
+  Operational Impact
   - All client requests will fail after sealing
   - Vault must be unsealed before normal operations can resume
   - Consider impact on dependent applications and services

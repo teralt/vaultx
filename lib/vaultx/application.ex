@@ -1,93 +1,63 @@
 defmodule Vaultx.Application do
   @moduledoc """
-  OTP Application for Vaultx HashiCorp Vault client.
+  OTP Application for VaultX HashiCorp Vault client.
 
-  This application manages the lifecycle of Vaultx infrastructure components,
-  including HTTP connection pools, telemetry handlers, and optional background
-  processes. It follows OTP principles for fault tolerance and graceful startup.
+  This application manages the lifecycle of VaultX infrastructure components
+  with a focus on simplicity, reliability, and fast startup.
 
   ## Architecture
 
-  The application uses a robust supervision tree with fault tolerance:
-  - HTTP connection pool (Finch) for efficient connection reuse
-  - Optional cache system for performance optimization
-  - Optional telemetry handlers for observability
-  - Optional background services (token renewal, rate limiting)
-  - Graceful degradation when optional components fail
+  - Core Components: HTTP connection pool (required)
+  - Optional Components: Cache, token renewal, rate limiting, hot reload
+  - Fault Tolerance: Optional components can fail without affecting core functionality
+  - Fast Startup: Minimal validation during startup, comprehensive analysis on demand
 
   ## Startup Process
 
-  1. Load and validate configuration
-  2. Start core infrastructure (HTTP pool)
+  1. Load configuration with basic validation
+  2. Start HTTP connection pool
   3. Start optional components based on configuration
-  4. Setup telemetry handlers if enabled
-  5. Log startup summary with component status
+  4. Setup telemetry if enabled
 
-  ## Error Handling
-
-  - Core components (HTTP pool) must start successfully
-  - Optional components can fail without stopping the application
-  - Comprehensive logging for troubleshooting
-  - Graceful shutdown with proper cleanup
-
-  ## References
-
-  - [OTP Application Behavior](https://hexdocs.pm/elixir/Application.html)
-  - [Supervisor Strategies](https://hexdocs.pm/elixir/Supervisor.html)
   """
 
   use Application
 
-  alias Vaultx.Base.{Config, Logger, Security}
+  alias Vaultx.Base.{Config, Logger}
 
-  @type child_spec :: Supervisor.child_spec() | {module(), term()} | module()
-  @type startup_result :: {:ok, pid()} | {:error, term()}
+  require Logger
 
   @doc false
   def start(_type, _args) do
-    start_time = System.monotonic_time()
+    Logger.info("[Vaultx] Starting application")
 
-    with :ok <- log_startup_begin(),
-         {:ok, config} <- load_and_validate_config(),
-         {:ok, children} <- build_children_safely(config),
-         {:ok, supervisor_pid} <- start_supervisor(children),
-         :ok <- setup_post_startup_components(config) do
-      duration = System.monotonic_time() - start_time
-      log_startup_success(children, duration)
+    with {:ok, config} <- load_config(),
+         {:ok, children} <- build_children(config),
+         {:ok, supervisor_pid} <- start_supervisor(children) do
+      setup_telemetry_if_enabled()
+      log_startup_success(children)
       {:ok, supervisor_pid}
     else
       {:error, reason} = error ->
-        duration = System.monotonic_time() - start_time
-        log_startup_failure(reason, duration)
+        Logger.error("[Vaultx] Application startup failed", error: reason)
         error
     end
   end
 
   @doc false
   def stop(_state) do
-    Logger.info("Stopping Vaultx application")
-
-    # Cleanup telemetry handlers if enabled
-    if Config.feature_enabled?(:telemetry) do
-      cleanup_telemetry()
-      Logger.debug("Telemetry cleanup completed")
-    end
-
-    Logger.info("Vaultx application stopped successfully")
+    Logger.info("[Vaultx] Stopping application")
+    cleanup_telemetry_if_enabled()
     :ok
   end
 
-  @doc """
-  Returns the current version of Vaultx.
-  """
+  @doc "Returns the current version of VaultX."
   @spec version() :: String.t()
   def version do
     Application.spec(:vaultx, :vsn) |> to_string()
   end
 
-  @doc """
-  Returns the application configuration summary.
-  """
+  @doc "Returns a summary of the current configuration."
   @spec config_summary() :: map()
   def config_summary do
     config = Config.get()
@@ -95,105 +65,47 @@ defmodule Vaultx.Application do
     %{
       url: config.url,
       timeout: config.timeout,
-      retry_attempts: config.retry_attempts,
       ssl_verify: config.ssl_verify,
-      logger_level: config.logger_level,
-      telemetry_enabled: config.telemetry_enabled,
-      features: Config.features_status()
+      features_enabled: Config.enabled_features()
     }
   end
 
-  # Private functions - Startup Process
+  # ============================================================================
+  # Private Functions - Startup
+  # ============================================================================
 
-  defp log_startup_begin do
-    Logger.info("Starting Vaultx application", %{version: version()})
-    :ok
-  end
-
-  defp load_and_validate_config do
+  defp load_config do
     try do
-      # Set startup context to skip connectivity tests
+      # Set startup context to avoid complex analysis during boot
       Process.put(:vaultx_startup_context, :application_startup)
 
-      # Use modern configuration system with comprehensive validation
-      case Config.get_modern() do
-        {:ok, config} ->
-          Logger.info("Configuration loaded with modern validation", %{
-            url: config.url,
-            features_enabled: length(Config.enabled_features()),
-            validation_system: :modern
-          })
-
-          # Run comprehensive analysis for startup diagnostics
-          try do
-            {:ok, analysis} = Vaultx.Config.analyze()
-
-            Logger.info("Configuration analysis completed", %{
-              performance_score: analysis.performance_score,
-              security_score: analysis.security_score,
-              issues_count: length(analysis.issues),
-              connectivity_status: analysis.connectivity_status
-            })
-
-            # Log warnings if any
-            if not Enum.empty?(analysis.issues) do
-              warnings = Enum.filter(analysis.issues, &(&1.type == :warning))
-              errors = Enum.filter(analysis.issues, &(&1.type == :error))
-
-              if not Enum.empty?(warnings) do
-                Logger.warning("Configuration warnings detected", %{
-                  count: length(warnings),
-                  warnings: Enum.map(warnings, & &1.message)
-                })
-              end
-
-              if not Enum.empty?(errors) do
-                Logger.error("Configuration errors detected", %{
-                  count: length(errors),
-                  errors: Enum.map(errors, & &1.message)
-                })
-              end
-            end
-          rescue
-            analysis_error ->
-              Logger.warning("Configuration analysis failed",
-                error: Exception.message(analysis_error)
-              )
-          end
-
-          {:ok, config}
-
-        {:error, config_error} ->
-          Logger.warning("Modern configuration validation failed, falling back to legacy",
-            error: config_error
-          )
-
-          # Fallback to legacy configuration
-          config = Config.get()
-
-          Logger.debug("Configuration loaded with legacy validation", %{
-            url: config.url,
-            features_enabled: length(Config.enabled_features()),
-            validation_system: :legacy
-          })
-
-          {:ok, config}
-      end
+      config = Config.get()
+      Logger.info("[Vaultx] Configuration loaded", url: config.url)
+      {:ok, config}
     rescue
       error ->
-        Logger.error("Failed to load configuration", error: error)
+        Logger.error("[Vaultx] Failed to load configuration", error: Exception.message(error))
         {:error, {:config_load_failed, error}}
     end
   end
 
-  defp build_children_safely(config) do
+  defp build_children(config) do
     try do
-      children = build_children(config)
-      Logger.debug("Child specifications built", %{count: length(children)})
+      children = [
+        # Core component - HTTP pool (required)
+        build_finch_spec(config)
+        # Optional components
+        | build_optional_components(config)
+      ]
+
+      Logger.debug("[Vaultx] Built #{length(children)} child specifications")
       {:ok, children}
     rescue
       error ->
-        Logger.error("Failed to build child specifications", error: error)
+        Logger.error("[Vaultx] Failed to build child specifications",
+          error: Exception.message(error)
+        )
+
         {:error, {:child_spec_failed, error}}
     end
   end
@@ -203,268 +115,79 @@ defmodule Vaultx.Application do
 
     case Supervisor.start_link(children, opts) do
       {:ok, pid} = success ->
-        Logger.debug("Supervisor started successfully", %{pid: inspect(pid)})
+        Logger.debug("[Vaultx] Supervisor started", pid: inspect(pid))
         success
 
       {:error, reason} = error ->
-        Logger.error("Failed to start supervisor", error: reason)
+        Logger.error("[Vaultx] Failed to start supervisor", error: reason)
         error
     end
   end
 
-  defp setup_post_startup_components(_config) do
+  defp setup_telemetry_if_enabled do
     if Config.feature_enabled?(:telemetry) do
-      setup_telemetry()
-      Logger.debug("Telemetry setup completed")
-    end
-
-    # Perform post-startup configuration health check
-    perform_post_startup_health_check()
-
-    :ok
-  end
-
-  defp perform_post_startup_health_check do
-    try do
-      health_status = Vaultx.Config.get_health_status()
-
-      case health_status do
-        :healthy ->
-          Logger.info("Configuration health check: HEALTHY")
-
-        :degraded ->
-          Logger.warning("Configuration health check: DEGRADED - Some issues detected")
-
-        :unhealthy ->
-          Logger.error("Configuration health check: UNHEALTHY - Multiple issues detected")
+      case setup_telemetry() do
+        :ok -> Logger.debug("[Vaultx] Telemetry enabled")
+        _error -> Logger.warning("[Vaultx] Telemetry setup failed")
       end
-
-      # Run diagnostics if not healthy
-      if health_status != :healthy do
-        try do
-          {:ok, optimization} = Vaultx.Config.validate_and_optimize()
-
-          if not Enum.empty?(optimization.suggestions) do
-            Logger.info("Configuration optimization suggestions available", %{
-              count: length(optimization.suggestions),
-              optimization_potential: optimization.optimization_potential
-            })
-          end
-        rescue
-          error ->
-            Logger.warning("Failed to get optimization suggestions",
-              error: Exception.message(error)
-            )
-        end
-      end
-    rescue
-      error ->
-        Logger.warning("Configuration health check failed", error: Exception.message(error))
     end
   end
 
-  defp log_startup_success(children, duration) do
-    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
-
-    Logger.info("Vaultx application started successfully", %{
-      children_count: length(children),
-      startup_time_ms: duration_ms,
-      features: Config.features_status()
-    })
+  defp log_startup_success(children) do
+    Logger.info("[Vaultx] Application started successfully",
+      components: length(children),
+      version: version()
+    )
   end
 
-  defp log_startup_failure(reason, duration) do
-    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+  # ============================================================================
+  # Private Functions - Component Management
+  # ============================================================================
 
-    Logger.error("Vaultx application startup failed", %{
-      reason: reason,
-      startup_time_ms: duration_ms
-    })
+  defp build_optional_components(config) do
+    [
+      maybe_build_cache(config),
+      maybe_build_token_renewal(config),
+      maybe_build_rate_limiter(config),
+      maybe_build_hot_reload(config)
+    ]
+    |> Enum.reject(&is_nil/1)
   end
 
-  # Private functions - Child Management
-
-  defp build_children(config) do
-    []
-    |> add_core_components(config)
-    |> add_optional_components(config)
-    |> Enum.reverse()
-  end
-
-  defp add_core_components(children, config) do
-    # HTTP pool is required for all operations
-    [build_finch_child_spec(config) | children]
-  end
-
-  defp add_optional_components(children, config) do
-    children
-    |> maybe_add_component(:cache_system, config)
-    |> maybe_add_component(:token_renewal, config)
-    |> maybe_add_component(:rate_limiter, config)
-    |> maybe_add_component(:config_hot_reload, config)
-  end
-
-  defp setup_telemetry do
-    # Attach default telemetry handlers if telemetry is available
-    case Vaultx.Base.Telemetry.attach_many(
-           "vaultx-default-handler",
-           [
-             [:vaultx, :http, :request, :start],
-             [:vaultx, :http, :request, :stop],
-             [:vaultx, :http, :request, :exception],
-             [:vaultx, :auth, :start],
-             [:vaultx, :auth, :success],
-             [:vaultx, :auth, :failure]
-           ],
-           &__MODULE__.handle_telemetry_event/4,
-           %{}
-         ) do
-      :ok ->
-        Logger.debug("Telemetry handlers attached successfully")
-        :ok
-
-      {:error, :telemetry_not_available} ->
-        # coveralls-ignore-next-line
-        Logger.debug("Telemetry not available, skipping handler setup")
-        :ok
-
-      {:error, error} ->
-        # coveralls-ignore-next-line
-        Logger.warning("Failed to attach telemetry handlers", error: error)
-        :ok
+  defp maybe_build_cache(config) do
+    if config.cache_enabled and Mix.env() != :test do
+      Logger.debug("[Vaultx] Adding cache system")
+      {Vaultx.Cache.Manager, []}
     end
   end
 
-  # NOTE: This cleanup_telemetry function is only called during application shutdown.
-  # In test environments, the telemetry handlers may not be attached when this is called,
-  # or the application may not go through a clean shutdown process. Testing this would
-  # require complex application lifecycle setup that doesn't provide meaningful value
-  # for these simple telemetry cleanup operations.
-  defp cleanup_telemetry do
-    # coveralls-ignore-start
-    case Vaultx.Base.Telemetry.detach("vaultx-default-handler") do
-      :ok ->
-        Logger.debug("Telemetry handlers detached successfully")
-
-      {:error, :telemetry_not_available} ->
-        Logger.debug("Telemetry not available, skipping cleanup")
-
-      {:error, _error} ->
-        Logger.debug("Telemetry handlers already detached or not found")
-    end
-
-    :ok
-    # coveralls-ignore-stop
-  end
-
-  def handle_telemetry_event(event, measurements, metadata, _config) do
-    Logger.debug("Telemetry event", %{
-      event: event,
-      measurements: measurements,
-      metadata: sanitize_metadata(metadata)
-    })
-  end
-
-  defp sanitize_metadata(metadata) do
-    Security.sanitize_for_logging(metadata)
-  end
-
-  # New component management functions
-
-  defp maybe_add_component(children, component_type, config) do
-    case should_start_component?(component_type, config) do
-      {true, reason} ->
-        {:ok, child_spec} = build_component_spec(component_type, config)
-
-        Logger.debug("Adding component to supervision tree", %{
-          component: component_type,
-          reason: reason
-        })
-
-        [child_spec | children]
-
-      {false, reason} ->
-        Logger.debug("Skipping component", %{
-          component: component_type,
-          reason: reason
-        })
-
-        children
+  defp maybe_build_token_renewal(config) do
+    if config.token_renewal_enabled and not is_nil(Config.get_token()) do
+      Logger.debug("[Vaultx] Adding token renewal")
+      {Vaultx.Auth.TokenRenewal, []}
     end
   end
 
-  defp should_start_component?(:cache_system, config) do
-    cond do
-      Mix.env() == :test ->
-        {false, "disabled in test environment"}
-
-      not config.cache_enabled ->
-        {false, "disabled by configuration"}
-
-      true ->
-        {true, "enabled by configuration"}
-    end
-  end
-
-  defp should_start_component?(:token_renewal, config) do
-    cond do
-      not config.token_renewal_enabled ->
-        {false, "disabled by configuration"}
-
-      is_nil(Config.get_token()) ->
-        {false, "no token available"}
-
-      true ->
-        {true, "enabled with valid token"}
-    end
-  end
-
-  defp should_start_component?(:rate_limiter, config) do
+  defp maybe_build_rate_limiter(config) do
     if config.rate_limit_enabled do
-      {true, "enabled with valid configuration"}
-    else
-      {false, "disabled by configuration"}
+      Logger.debug("[Vaultx] Adding rate limiter")
+
+      {Vaultx.Base.RateLimiter,
+       [rate: config.rate_limit_requests, burst: config.rate_limit_burst]}
     end
   end
 
-  defp should_start_component?(:config_hot_reload, config) do
+  defp maybe_build_hot_reload(config) do
     hot_reload_enabled = Map.get(config, :hot_reload_enabled, false)
 
-    cond do
-      Mix.env() == :test ->
-        {false, "disabled in test environment"}
-
-      not hot_reload_enabled ->
-        {false, "disabled by configuration"}
-
-      true ->
-        {true, "enabled for runtime configuration updates"}
+    if hot_reload_enabled and Mix.env() != :test do
+      Logger.debug("[Vaultx] Adding hot reload")
+      {Vaultx.Config.HotReload, []}
     end
   end
 
-  defp build_component_spec(:cache_system, _config) do
-    {:ok, {Vaultx.Cache.Manager, []}}
-  end
-
-  defp build_component_spec(:token_renewal, _config) do
-    {:ok, {Vaultx.Auth.TokenRenewal, []}}
-  end
-
-  defp build_component_spec(:rate_limiter, config) do
-    spec = {
-      Vaultx.Base.RateLimiter,
-      [rate: config.rate_limit_requests, burst: config.rate_limit_burst]
-    }
-
-    {:ok, spec}
-  end
-
-  defp build_component_spec(:config_hot_reload, _config) do
-    {:ok, {Vaultx.Config.HotReload, []}}
-  end
-
-  defp build_finch_child_spec(config) do
-    finch_pools = [
+  defp build_finch_spec(config) do
+    pools = [
       {:default,
        [
          size: config.pool_size,
@@ -473,6 +196,44 @@ defmodule Vaultx.Application do
        ]}
     ]
 
-    {Finch, name: Vaultx.Finch, pools: finch_pools}
+    {Finch, name: Vaultx.Finch, pools: pools}
+  end
+
+  # ============================================================================
+  # Private Functions - Telemetry
+  # ============================================================================
+
+  defp setup_telemetry do
+    events = [
+      [:vaultx, :http, :request, :start],
+      [:vaultx, :http, :request, :stop],
+      [:vaultx, :http, :request, :exception],
+      [:vaultx, :auth, :start],
+      [:vaultx, :auth, :success],
+      [:vaultx, :auth, :failure]
+    ]
+
+    case Vaultx.Base.Telemetry.attach_many("vaultx-handler", events, &handle_telemetry/4, %{}) do
+      :ok -> :ok
+      {:error, :telemetry_not_available} -> :ok
+      {:error, _error} -> :error
+    end
+  end
+
+  defp cleanup_telemetry_if_enabled do
+    if Config.feature_enabled?(:telemetry) do
+      case Vaultx.Base.Telemetry.detach("vaultx-handler") do
+        :ok -> Logger.debug("[Vaultx] Telemetry cleaned up")
+        _error -> :ok
+      end
+    end
+  end
+
+  def handle_telemetry(event, measurements, metadata, _config) do
+    Logger.debug("[Vaultx] Telemetry event",
+      event: event,
+      duration: measurements[:duration],
+      status: metadata[:status]
+    )
   end
 end

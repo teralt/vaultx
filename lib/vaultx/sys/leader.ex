@@ -23,17 +23,17 @@ defmodule Vaultx.Sys.Leader do
 
   ## Important Notes
 
-  **Unauthenticated Endpoint**
+  Unauthenticated Endpoint
   - No authentication required to check leader status
   - Safe to call from monitoring and health check systems
   - Provides operational visibility without exposing secrets
 
-  **High Availability Context**
+  High Availability Context
   - Information varies based on HA configuration
   - Single-node deployments show limited HA information
   - Cluster topology affects available metrics
 
-  **Performance Standby Information**
+  Performance Standby Information
   - Performance standby metrics available in Vault Enterprise
   - Shows replication lag and synchronization status
   - Useful for monitoring Enterprise HA deployments

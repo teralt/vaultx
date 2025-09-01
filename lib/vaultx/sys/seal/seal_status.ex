@@ -24,12 +24,12 @@ defmodule Vaultx.Sys.SealStatus do
 
   ## Important Notes
 
-  **Unauthenticated Endpoint**
+  Unauthenticated Endpoint
   - No authentication required to check seal status
   - Safe to call from monitoring and health check systems
   - Does not expose sensitive information
 
-  **High Availability Information**
+  High Availability Information
   - Cluster information only available when unsealed
   - Different nodes may report different status during transitions
   - Use for cluster health monitoring and automation

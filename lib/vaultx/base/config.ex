@@ -8,10 +8,10 @@ defmodule Vaultx.Base.Config do
 
   ## Design Philosophy
 
-  - **Delegation**: All functionality delegates to modern config system
-  - **Backward Compatibility**: Maintains existing API for legacy code
-  - **Simplicity**: No duplicate logic, single source of truth
-  - **Performance**: Direct delegation without overhead
+  - Delegation: All functionality delegates to modern config system
+  - Backward Compatibility: Maintains existing API for legacy code
+  - Simplicity: No duplicate logic, single source of truth
+  - Performance: Direct delegation without overhead
 
   ## Configuration Sources
 

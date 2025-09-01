@@ -22,17 +22,17 @@ defmodule Vaultx.Sys.Unseal do
 
   ## Important Security Notes
 
-  **Restricted Endpoint**
+  Restricted Endpoint
   - Must be called from the root namespace
   - No authentication required (Vault is sealed)
   - Keys are sensitive and should be handled securely
 
-  **Key Management**
+  Key Management
   - Each key can only be used once per unseal attempt
   - Keys should be distributed among trusted operators
   - Reset clears all previously submitted keys
 
-  **Migration Considerations**
+  Migration Considerations
   - Migration flag must be consistent across all key submissions
   - Used for transitioning between Shamir and auto-seal
   - Requires careful coordination during migration
