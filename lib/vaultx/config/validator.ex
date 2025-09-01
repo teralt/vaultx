@@ -114,6 +114,18 @@ defmodule Vaultx.Config.Validator do
       end
 
   """
+  @spec validate_basic(map()) :: :ok | {:error, [String.t()]}
+  def validate_basic(config) when is_map(config) do
+    issues = validate_core_configuration(config)
+
+    if Enum.empty?(issues) do
+      :ok
+    else
+      error_messages = Enum.map(issues, & &1.message)
+      {:error, error_messages}
+    end
+  end
+
   @spec validate_comprehensive(Config.t()) :: [validation_issue()]
   def validate_comprehensive(config) when is_map(config) do
     [
