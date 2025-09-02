@@ -9,7 +9,7 @@ defmodule Vaultx.Cache.Manager do
 
   use GenServer
 
-  alias Vaultx.Base.{Config, Error, Logger}
+  alias Vaultx.Base.{Config, Error, Logger, Telemetry}
   alias Vaultx.Cache.{L1, L2, L3, Metrics}
 
   defstruct [
@@ -123,9 +123,12 @@ defmodule Vaultx.Cache.Manager do
 
     state = %{state | metrics_pid: metrics_pid}
 
-    # Schedule cleanup
+    # Schedule cleanup and metrics emission
     cleanup_timer = schedule_cleanup(state)
     state = %{state | cleanup_timer: cleanup_timer}
+
+    # Schedule periodic metrics emission
+    schedule_metrics_emission()
 
     Logger.info("Cache manager started", %{
       l1_enabled: state.l1_enabled,
@@ -183,6 +186,12 @@ defmodule Vaultx.Cache.Manager do
     perform_cleanup(state)
     cleanup_timer = schedule_cleanup(state)
     {:noreply, %{state | cleanup_timer: cleanup_timer}}
+  end
+
+  @impl true
+  def handle_info(:emit_metrics, state) do
+    emit_cache_metrics()
+    {:noreply, state}
   end
 
   @impl true
@@ -595,5 +604,52 @@ defmodule Vaultx.Cache.Manager do
   defp schedule_cleanup(state) do
     interval = Map.get(state.config, :manager_cleanup_interval, @cleanup_interval)
     Process.send_after(self(), :cleanup, interval)
+  end
+
+  defp schedule_metrics_emission do
+    # Emit cache metrics every 30 seconds
+    Process.send_after(self(), :emit_metrics, 30_000)
+  end
+
+  defp emit_cache_metrics do
+    try do
+      case Metrics.get_stats() do
+        {:ok, stats} ->
+          # Calculate overall hit rate
+          total_hits = stats.total_hits || 0
+          total_misses = stats.total_misses || 0
+          total_requests = total_hits + total_misses
+          hit_rate = if total_requests > 0, do: total_hits / total_requests, else: 0.0
+
+          # Calculate total memory usage
+          memory_usage = stats.memory_usage || 0
+
+          # Calculate total cache size
+          l1_size = get_in(stats, [:l1, :size]) || 0
+          l2_size = get_in(stats, [:l2, :size]) || 0
+          l3_size = get_in(stats, [:l3, :size]) || 0
+          total_size = l1_size + l2_size + l3_size
+
+          # Emit enhanced cache metrics
+          Telemetry.emit_cache_metrics(hit_rate, total_size, memory_usage, %{
+            l1_size: l1_size,
+            l2_size: l2_size,
+            l3_size: l3_size,
+            total_hits: total_hits,
+            total_misses: total_misses
+          })
+
+        _ ->
+          # Fallback metrics if stats unavailable
+          Telemetry.emit_cache_metrics(0.0, 0, 0, %{})
+      end
+    rescue
+      _ ->
+        # Fallback if any error occurs
+        Telemetry.emit_cache_metrics(0.0, 0, 0, %{})
+    end
+
+    # Schedule next emission
+    schedule_metrics_emission()
   end
 end

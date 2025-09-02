@@ -227,7 +227,8 @@ defmodule Vaultx.Application do
   # ============================================================================
 
   defp setup_telemetry do
-    events = [
+    # Core events
+    core_events = [
       [:vaultx, :http, :request, :start],
       [:vaultx, :http, :request, :stop],
       [:vaultx, :http, :request, :exception],
@@ -236,7 +237,24 @@ defmodule Vaultx.Application do
       [:vaultx, :auth, :failure]
     ]
 
-    case Vaultx.Base.Telemetry.attach_many("vaultx-handler", events, &handle_telemetry/4, %{}) do
+    # Enhanced telemetry events
+    enhanced_events = [
+      [:vaultx, :cache, :metrics],
+      [:vaultx, :cache, :hit],
+      [:vaultx, :cache, :miss],
+      [:vaultx, :cache, :eviction],
+      [:vaultx, :pool, :metrics],
+      [:vaultx, :pool, :exhaustion],
+      [:vaultx, :security, :event],
+      [:vaultx, :security, :anomaly],
+      [:vaultx, :business, :secret_access],
+      [:vaultx, :business, :engine_usage],
+      [:vaultx, :performance]
+    ]
+
+    all_events = core_events ++ enhanced_events
+
+    case Vaultx.Base.Telemetry.attach_many("vaultx-handler", all_events, &handle_telemetry/4, %{}) do
       :ok ->
         :ok
 
@@ -263,10 +281,82 @@ defmodule Vaultx.Application do
   end
 
   def handle_telemetry(event, measurements, metadata, _config) do
-    Logger.debug("[Vaultx] Telemetry event",
-      event: event,
-      duration: measurements[:duration],
-      status: metadata[:status]
-    )
+    case event do
+      # Core HTTP and auth events
+      [:vaultx, :http, :request, _] ->
+        Logger.debug("[Vaultx] HTTP event",
+          event: event,
+          duration: measurements[:duration],
+          status: metadata[:status],
+          method: metadata[:method],
+          path: metadata[:path]
+        )
+
+      [:vaultx, :auth, _] ->
+        Logger.debug("[Vaultx] Auth event",
+          event: event,
+          duration: measurements[:duration],
+          result: metadata[:result]
+        )
+
+      # Enhanced telemetry events
+      [:vaultx, :cache, :metrics] ->
+        Logger.info("[Vaultx] Cache metrics",
+          hit_rate: measurements[:hit_rate],
+          size: measurements[:size],
+          memory_mb: div(measurements[:memory_usage] || 0, 1024 * 1024)
+        )
+
+      [:vaultx, :cache, event_type] when event_type in [:hit, :miss, :eviction] ->
+        Logger.debug("[Vaultx] Cache event",
+          event_type: event_type,
+          key: metadata[:key]
+        )
+
+      [:vaultx, :pool, :metrics] ->
+        Logger.info("[Vaultx] Pool metrics",
+          active: measurements[:active_connections],
+          idle: measurements[:idle_connections],
+          pending: measurements[:pending_requests],
+          avg_response_time: measurements[:avg_response_time]
+        )
+
+      [:vaultx, :pool, :exhaustion] ->
+        Logger.warn("[Vaultx] Pool exhaustion",
+          pool_name: metadata[:pool_name]
+        )
+
+      [:vaultx, :security, :event] ->
+        Logger.info("[Vaultx] Security event",
+          event_type: metadata[:event_type],
+          severity: measurements[:severity_level]
+        )
+
+      [:vaultx, :security, :anomaly] ->
+        Logger.warn("[Vaultx] Security anomaly",
+          description: metadata[:description],
+          severity: measurements[:severity_level]
+        )
+
+      [:vaultx, :business, metric_type] ->
+        Logger.debug("[Vaultx] Business metric",
+          metric_type: metric_type,
+          value: measurements[:value]
+        )
+
+      [:vaultx, :performance] ->
+        Logger.debug("[Vaultx] Performance metric",
+          operation: metadata[:operation],
+          duration: measurements[:duration],
+          success: measurements[:success] == 1
+        )
+
+      _ ->
+        Logger.debug("[Vaultx] Telemetry event",
+          event: event,
+          measurements: measurements,
+          metadata: metadata
+        )
+    end
   end
 end

@@ -261,10 +261,21 @@ defmodule Vaultx.Cache do
 
     case result do
       {:ok, value} ->
+        # Emit enhanced cache hit event
+        Telemetry.emit_cache_event(:hit, key, %{
+          layer: get_hit_layer(result),
+          duration: duration
+        })
+
         Logger.debug("Cache hit", %{key: key, layer: get_hit_layer(result)})
         {:ok, value}
 
       {:error, :not_found} = error ->
+        # Emit enhanced cache miss event
+        Telemetry.emit_cache_event(:miss, key, %{
+          duration: duration
+        })
+
         Logger.debug("Cache miss", %{key: key})
         error
 

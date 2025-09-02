@@ -148,6 +148,17 @@ defmodule Vaultx.Auth.Token do
           Telemetry.auth_success(duration, metadata)
           Security.audit_log(:authentication, :success, metadata)
 
+          # Enhanced security event for successful authentication
+          Telemetry.emit_security_event(
+            :token_lookup_success,
+            :low,
+            %{
+              token_policies: token_data["policies"],
+              ttl: token_data["ttl"],
+              renewable: token_data["renewable"]
+            }
+          )
+
           {:ok, token_info}
 
         {:ok, %{body: response}} ->
@@ -163,6 +174,18 @@ defmodule Vaultx.Auth.Token do
           Logger.error("Token lookup failed", Map.put(metadata, :error, error))
           Telemetry.auth_failure(duration, Map.put(metadata, :error, error))
           Security.audit_log(:authentication, :failure, Map.put(metadata, :error, error.type))
+
+          # Enhanced security event for authentication failure
+          severity = if error.type in [:unauthorized, :forbidden], do: :high, else: :medium
+
+          Telemetry.emit_security_event(
+            :token_lookup_failure,
+            severity,
+            %{
+              error_type: error.type,
+              status: Map.get(response, "status", 400)
+            }
+          )
 
           {:error, error}
 
