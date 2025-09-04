@@ -25,7 +25,7 @@ VaultX follows conventional commit types for organizing contributions:
 
 For any contribution that involves functional changes or substantial modifications:
 
-1. **Tests Must Pass**: Ensure `mix test` passes completely
+1. **Tests Must Pass**: Ensure `MIX_ENV=test mix test` passes completely
 2. **Test Coverage**: Maintain project test coverage at **99% or above**
 3. **Coverage Exclusions**: If you need to exclude code from coverage using `# coveralls-ignore`, you must:
    - Add a comment explaining why the code is excluded
@@ -56,28 +56,28 @@ VaultX uses [mise](https://mise.jdx.dev/) for consistent development environment
 
 1. **Fork and clone the repository:**
 
-   ```bash
-   git clone https://github.com/your-username/vaultx.git
-   cd vaultx
-   ```
+```bash
+git clone https://github.com/your-username/vaultx.git
+cd vaultx
+```
 
-2. **Install required versions (if using mise):**
+1. **Install required versions (if using mise):**
 
-   ```bash
-   mise install
-   ```
+```bash
+mise install
+```
 
-3. **Install dependencies:**
+1. **Install dependencies:**
 
-   ```bash
-   mix deps.get
-   ```
+```bash
+mix deps.get
+```
 
-4. **Compile the project:**
+1. **Compile the project:**
 
-   ```bash
-   mix compile
-   ```
+```bash
+mix compile
+```
 
 #### Alternative Setup (without mise)
 
@@ -109,14 +109,17 @@ mise run check
 mise run release-check
 ```
 
-#### Using mix directly
+#### Alternative: Using mix directly
 
 ```bash
-# Run tests
-mix test
+# Run tests with proper environment
+MIX_ENV=test mix test
 
 # Test coverage analysis
-mix test --cover
+MIX_ENV=test mix test --cover
+
+# Generate detailed HTML coverage report
+MIX_ENV=test mix coveralls.html
 
 # Format code
 mix format
@@ -130,8 +133,14 @@ mix format --check-formatted
 VaultX maintains a strict 99% test coverage requirement. To check coverage:
 
 ```bash
-mix test --cover
+# Basic coverage check
+MIX_ENV=test mix test --cover
+
+# Generate detailed HTML coverage report (recommended for development)
+MIX_ENV=test mix coveralls.html
 ```
+
+The HTML report will be generated in `cover/excoveralls.html` and provides detailed line-by-line coverage information to help identify uncovered code.
 
 If you need to exclude specific lines from coverage, use `# coveralls-ignore`:
 
@@ -146,42 +155,46 @@ end
 
 **Important**: Always document why code is excluded from coverage in both the code comment and your PR description.
 
-### Development Workflow
+### Step-by-Step Development Workflow
 
 1. **Create a feature branch:**
 
-   ```bash
-   git checkout -b feat/your-feature-name
-   # or
-   git checkout -b fix/issue-description
-   ```
+```bash
+git checkout -b feat/your-feature-name
+# or
+git checkout -b fix/issue-description
+```
 
-2. **Make your changes** and write comprehensive tests
+1. **Make your changes** and write comprehensive tests
 
-3. **Run tests and ensure coverage:**
+1. **Run tests and ensure coverage:**
 
-   ```bash
-   mix test --cover
-   ```
+```bash
+# Run tests with coverage check
+MIX_ENV=test mix test --cover
 
-4. **Format your code:**
+# Or generate detailed HTML report for analysis
+MIX_ENV=test mix coveralls.html
+```
 
-   ```bash
-   mix format
-   ```
+1. **Format your code:**
 
-5. **Commit your changes with conventional commit format:**
+```bash
+mix format
+```
 
-   ```bash
-   git add .
-   git commit -m "feat: add new authentication method"
-   # or
-   git commit -m "fix: resolve token renewal issue"
-   # or
-   git commit -m "docs: update configuration examples"
-   ```
+1. **Commit your changes with conventional commit format:**
 
-6. **Push and create a pull request**
+```bash
+git add .
+git commit -m "feat: add new authentication method"
+# or
+git commit -m "fix: resolve token renewal issue"
+# or
+git commit -m "docs: update configuration examples"
+```
+
+1. **Push and create a pull request**
 
 ## Contributing to Documentation
 
@@ -236,7 +249,7 @@ mix compile
 
 ## Common Development Tasks
 
-### Using mise (Recommended)
+### Quick Commands with mise (Recommended)
 
 - **Run tests**: `mise run test`
 - **Run tests with coverage**: `mise run coverage`
@@ -247,10 +260,11 @@ mix compile
 - **Comprehensive checks**: `mise run check`
 - **Release readiness**: `mise run release-check`
 
-### Using mix directly
+### Manual Commands with mix
 
-- **Run specific test file**: `mix test test/path/to/test_file.exs`
-- **Run tests with coverage**: `mix test --cover`
+- **Run specific test file**: `MIX_ENV=test mix test test/path/to/test_file.exs`
+- **Run tests with coverage**: `MIX_ENV=test mix test --cover`
+- **Generate HTML coverage report**: `MIX_ENV=test mix coveralls.html`
 - **Check formatting**: `mix format --check-formatted`
 - **Generate documentation**: `mix docs`
 

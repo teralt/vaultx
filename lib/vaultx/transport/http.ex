@@ -186,6 +186,21 @@ defmodule Vaultx.Transport.HTTP do
 
     start_time = System.monotonic_time()
 
+    # Emit enhanced performance metrics start
+    if request_opts.metrics_enabled do
+      Telemetry.emit_performance_metrics(
+        :http_request,
+        0,
+        true,
+        %{
+          method: method,
+          path: path,
+          phase: :start,
+          request_id: request_id
+        }
+      )
+    end
+
     # Rate limit: consume token (blocks if needed), per-bucket by host|namespace
     if request_opts.rate_limit_enabled and request_opts.rate_limit_requests > 0 do
       host = URI.parse(url).host || "default"
@@ -217,6 +232,35 @@ defmodule Vaultx.Transport.HTTP do
 
         if request_opts.metrics_enabled do
           Telemetry.http_request_stop(duration, Map.put(metadata, :status, response.status))
+
+          # Enhanced performance metrics
+          Telemetry.emit_performance_metrics(
+            :http_request,
+            duration,
+            true,
+            %{
+              method: method,
+              path: path,
+              status: response.status,
+              request_id: request_id,
+              phase: :complete
+            }
+          )
+
+          # Business metrics for successful operations
+          engine_type = detect_engine_type(path)
+          operation_type = detect_operation_type(method, path)
+
+          Telemetry.emit_business_metrics(
+            :api_usage,
+            1,
+            %{
+              engine: engine_type,
+              operation: operation_type,
+              status: response.status,
+              success: true
+            }
+          )
         end
 
         if request_opts.audit_enabled do
@@ -241,6 +285,49 @@ defmodule Vaultx.Transport.HTTP do
 
         if request_opts.metrics_enabled do
           Telemetry.http_request_exception(duration, Map.put(metadata, :error, error))
+
+          # Enhanced performance metrics for failures
+          Telemetry.emit_performance_metrics(
+            :http_request,
+            duration,
+            false,
+            %{
+              method: method,
+              path: path,
+              error: error.type,
+              request_id: request_id,
+              phase: :error
+            }
+          )
+
+          # Security events for suspicious failures
+          if error.type in [:unauthorized, :forbidden, :authentication_failed] do
+            Telemetry.emit_security_event(
+              :http_auth_failure,
+              :medium,
+              %{
+                method: method,
+                path: path,
+                error_type: error.type,
+                request_id: request_id
+              }
+            )
+          end
+
+          # Business metrics for failed operations
+          engine_type = detect_engine_type(path)
+          operation_type = detect_operation_type(method, path)
+
+          Telemetry.emit_business_metrics(
+            :api_usage,
+            1,
+            %{
+              engine: engine_type,
+              operation: operation_type,
+              success: false,
+              error_type: error.type
+            }
+          )
         end
 
         if request_opts.audit_enabled do
@@ -662,4 +749,44 @@ defmodule Vaultx.Transport.HTTP do
   end
 
   # coveralls-ignore-stop
+
+  # Enhanced telemetry helper functions
+
+  defp detect_engine_type(path) do
+    cond do
+      String.contains?(path, "/secret/") -> :kv
+      String.contains?(path, "/auth/") -> :auth
+      String.contains?(path, "/sys/") -> :system
+      String.contains?(path, "/aws/") -> :aws
+      String.contains?(path, "/pki/") -> :pki
+      String.contains?(path, "/transit/") -> :transit
+      String.contains?(path, "/totp/") -> :totp
+      String.contains?(path, "/rabbitmq/") -> :rabbitmq
+      String.contains?(path, "/consul/") -> :consul
+      true -> :unknown
+    end
+  end
+
+  defp detect_operation_type(method, path) do
+    case {method, path} do
+      {:get, path} when is_binary(path) ->
+        if String.contains?(path, "/list"), do: :list, else: :read
+
+      {:post, path} when is_binary(path) ->
+        cond do
+          String.contains?(path, "/generate") -> :generate
+          String.contains?(path, "/sign") -> :sign
+          true -> :write
+        end
+
+      {:put, _} ->
+        :write
+
+      {:delete, _} ->
+        :delete
+
+      _ ->
+        :unknown
+    end
+  end
 end

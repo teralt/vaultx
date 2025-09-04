@@ -186,7 +186,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for encryption", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for encryption", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -195,7 +195,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Data encryption failed", Map.put(metadata, :error, error))
+        Logger.warn("Data encryption failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -276,7 +276,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for decryption", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for decryption", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -285,7 +285,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Data decryption failed", Map.put(metadata, :error, error))
+        Logger.warn("Data decryption failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -425,7 +425,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning("Transit key not found for rewrap", Map.put(metadata, :error, error))
+        Logger.warn("Transit key not found for rewrap", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -434,7 +434,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Data rewrap failed", Map.put(metadata, :error, error))
+        Logger.warn("Data rewrap failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -512,7 +512,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.new(:key_not_found, "Key '#{key_name}' not found")
 
-        Logger.warning(
+        Logger.warn(
           "Transit key not found for batch encryption",
           Map.put(metadata, :error, error)
         )
@@ -525,7 +525,7 @@ defmodule Vaultx.Secrets.Transit.Encryption do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Batch data encryption failed", Map.put(metadata, :error, error))
+        Logger.warn("Batch data encryption failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

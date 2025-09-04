@@ -190,7 +190,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Root CA generation failed", Map.put(metadata, :error, error))
+        Logger.warn("Root CA generation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -264,7 +264,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("Intermediate CA CSR generation failed", Map.put(metadata, :error, error))
+        Logger.warn("Intermediate CA CSR generation failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -343,7 +343,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("CA certificate import failed", Map.put(metadata, :error, error))
+        Logger.warn("CA certificate import failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -407,7 +407,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("CA certificate read failed", Map.put(metadata, :error, error))
+        Logger.warn("CA certificate read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -546,7 +546,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning("CA certificate chain read failed", Map.put(metadata, :error, error))
+        Logger.warn("CA certificate chain read failed", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}
@@ -630,7 +630,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning(
+        Logger.warn(
           "Intermediate CA certificate signing failed",
           Map.put(metadata, :error, error)
         )
@@ -710,7 +710,7 @@ defmodule Vaultx.Secrets.PKI.CA do
         duration = System.monotonic_time() - start_time
         error = Error.from_http_response(status, body)
 
-        Logger.warning(
+        Logger.warn(
           "Setting intermediate CA certificate failed",
           Map.put(metadata, :error, error)
         )

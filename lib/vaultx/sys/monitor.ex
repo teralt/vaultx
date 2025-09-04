@@ -34,18 +34,18 @@ defmodule Vaultx.Sys.Monitor do
 
   ## Important Notes
 
-  **Restricted Endpoint**
+  Restricted Endpoint
   - Must be called from the root or administrative namespace
   - Requires appropriate authentication and authorization
   - Not available in all Vault configurations
 
-  **Performance Considerations**
+  Performance Considerations
   - High-volume log streams may impact performance
   - Some log lines may be dropped if processing cannot keep up
   - Consider log level filtering to reduce volume
   - Monitor network bandwidth usage for remote streaming
 
-  **Output Format**
+  Output Format
   - Unlike most Vault APIs, this endpoint does not return JSON by default
   - Returns logs in the configured Vault log format (text by default)
   - Use JSON format option for structured log processing

@@ -222,7 +222,9 @@ defmodule Vaultx.Auth.GitHubTest do
   describe "token format validation" do
     test "validates various GitHub token formats" do
       valid_tokens = [
-        # Classic personal access token
+        # Classic personal access token (new format - 40 chars total)
+        "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",
+        # Classic personal access token (legacy format - 44 chars total)
         "ghp_1234567890abcdef1234567890abcdef12345678",
         # Fine-grained personal access token
         "github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
@@ -246,8 +248,11 @@ defmodule Vaultx.Auth.GitHubTest do
       invalid_tokens = [
         # Too short
         "ghp_short",
-        # Wrong prefix length for ghp_
-        "ghp_123456789012345678901234567890123456789",
+        # Wrong length for ghp_ (neither 40 nor 44 chars)
+        # 39 chars
+        "ghp_12345678901234567890123456789012345",
+        # 46 chars
+        "ghp_123456789012345678901234567890123456789012",
         # Empty
         "",
         # Very short

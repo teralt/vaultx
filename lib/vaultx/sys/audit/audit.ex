@@ -32,12 +32,12 @@ defmodule Vaultx.Sys.Audit do
 
   ## Important Security Notes
 
-  **Security Requirements**
+  Security Requirements
   - All audit operations require `sudo` capability
   - Audit devices must be enabled before use
   - Multiple audit devices can be enabled simultaneously
 
-  **Disable Considerations**
+  Disable Considerations
   - Disabling an audit device prevents HMAC value comparison
   - Re-enabling at the same path creates a new salt for hashing
   - Consider backup audit devices before disabling

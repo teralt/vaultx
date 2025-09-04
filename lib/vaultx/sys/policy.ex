@@ -278,7 +278,7 @@ defmodule Vaultx.Sys.Policy do
     # Prevent deletion of system policies
     if name in ["root", "default"] do
       error = Error.new(:invalid_request, "Cannot delete system policy: #{name}")
-      Logger.warning("Attempted to delete system policy", Map.put(metadata, :error, error))
+      Logger.warn("Attempted to delete system policy", Map.put(metadata, :error, error))
       {:error, error}
     else
       case HTTP.delete("sys/policy/#{name}", opts) do

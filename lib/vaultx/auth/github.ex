@@ -228,12 +228,16 @@ defmodule Vaultx.Auth.GitHub do
 
   defp valid_github_token_format?(token) do
     # GitHub personal access tokens have specific formats:
-    # - Classic tokens: ghp_xxxxxxxxxxxxxxxxxxxx (40 chars after ghp_)
+    # - Classic tokens (new format): ghp_xxxxxxxxxxxxxxxxxxxx (36 chars after ghp_, total 40 chars)
+    # - Classic tokens (legacy): ghp_xxxxxxxxxxxxxxxxxxxx (40 chars after ghp_, total 44 chars)
     # - Fine-grained tokens: github_pat_xxxxxxxxxxxxxxxxxxxx
     # - OAuth tokens: gho_xxxxxxxxxxxxxxxxxxxx
     # - Installation tokens: ghs_xxxxxxxxxxxxxxxxxxxx
     # - Refresh tokens: ghr_xxxxxxxxxxxxxxxxxxxx
     cond do
+      # New GitHub classic token format (2024+): ghp_ + 36 chars = 40 total
+      String.starts_with?(token, "ghp_") and String.length(token) == 40 -> true
+      # Legacy GitHub classic token format: ghp_ + 40 chars = 44 total (backward compatibility)
       String.starts_with?(token, "ghp_") and String.length(token) == 44 -> true
       String.starts_with?(token, "github_pat_") and String.length(token) >= 82 -> true
       String.starts_with?(token, "gho_") and String.length(token) == 40 -> true

@@ -108,7 +108,6 @@ defmodule Vaultx.Secrets.KV do
   alias Vaultx.Base.{Error, Logger}
   alias Vaultx.Secrets.KV.{V1, V2}
   alias Vaultx.Transport.HTTP
-  alias Vaultx.Types
 
   @default_mount_path "secret"
 
@@ -151,38 +150,6 @@ defmodule Vaultx.Secrets.KV do
 
   defp do_configure(config, opts),
     do: with_version_detection("", opts, fn _v, mod -> mod.configure(config, opts) end)
-
-  def metadata do
-    {:ok,
-     %Types.EngineMetadata{
-       type: :kv,
-       # Version varies by mount
-       version: nil,
-       capabilities: [:read, :write, :delete, :list, :auto_detection],
-       configuration: %{},
-       mount_path: @default_mount_path
-     }}
-  end
-
-  def health_check(opts \\ []), do: do_health_check(opts)
-
-  defp do_health_check(opts) do
-    mount_path = Keyword.get(opts, :mount_path, @default_mount_path)
-
-    case detect_kv_version(mount_path, opts) do
-      {:ok, version} ->
-        engine_module = get_engine_module(version)
-        engine_module.health_check(opts)
-
-      {:error, error} ->
-        {:ok,
-         %Types.HealthStatus{
-           healthy: false,
-           details: %{engine: "kv", error: error},
-           timestamp: DateTime.utc_now()
-         }}
-    end
-  end
 
   # KV-specific behaviour implementations
 
@@ -374,14 +341,14 @@ defmodule Vaultx.Secrets.KV do
 
   defp do_keys(path, opts) do
     case read(path, opts) do
-      {:ok, %Types.SecretData{data: data}} when is_map(data) -> {:ok, Map.keys(data)}
+      {:ok, %{data: data}} when is_map(data) -> {:ok, Map.keys(data)}
       {:error, error} -> {:error, error}
     end
   end
 
   defp do_get_field(path, field, opts) do
     case read(path, opts) do
-      {:ok, %Types.SecretData{data: data}} when is_map(data) ->
+      {:ok, %{data: data}} when is_map(data) ->
         case Map.get(data, field) do
           nil -> {:error, Error.new(:not_found, "Field '#{field}' not found")}
           value -> {:ok, value}
@@ -394,7 +361,7 @@ defmodule Vaultx.Secrets.KV do
 
   defp do_update_field(path, field, value, opts) do
     case read(path, opts) do
-      {:ok, %Types.SecretData{data: data}} when is_map(data) ->
+      {:ok, %{data: data}} when is_map(data) ->
         updated_data = Map.put(data, field, value)
         write(path, updated_data, opts)
 

@@ -23,17 +23,17 @@ defmodule Vaultx.Sys.Namespaces do
 
   ## Important Notes
 
-  **Enterprise Feature**
+  Enterprise Feature
   - Namespaces are only available in Vault Enterprise
   - Requires appropriate Vault Enterprise license
   - Not available in Vault Community Edition
 
-  **Authentication Required**
+  Authentication Required
   - All namespace operations require valid authentication
   - Appropriate permissions needed for namespace management
   - Root namespace access may be required for some operations
 
-  **Destructive Operations**
+  Destructive Operations
   - Deleting a namespace removes all contained secrets and policies
   - Namespace deletion is irreversible
   - Consider backup and recovery procedures

@@ -1,7 +1,7 @@
 defmodule Vaultx.MixProject do
   use Mix.Project
 
-  @version "0.6.1"
+  @version "0.7.0"
   @source_url "https://github.com/teralt/vaultx"
   @description "Modern, enterprise-grade HashiCorp Vault client for Elixir."
 
@@ -129,23 +129,41 @@ defmodule Vaultx.MixProject do
       groups_for_modules: [
         Core: [
           Vaultx.Application,
-          Vaultx.Client,
           Vaultx.Types
         ],
         "Base Infrastructure": [
           Vaultx.Base.Config,
           Vaultx.Base.Error,
-          Vaultx.Base.Features,
           Vaultx.Base.JSON,
           Vaultx.Base.Logger,
           Vaultx.Base.RateLimiter,
           Vaultx.Base.Security,
           Vaultx.Base.Telemetry
         ],
+        "Config & Diagnostics": [
+          Vaultx.Config,
+          Vaultx.Config.Builder,
+          Vaultx.Config.Diagnostics,
+          Vaultx.Config.HotReload,
+          Vaultx.Config.Optimizer,
+          Vaultx.Config.Templates,
+          Vaultx.Config.Validator
+        ],
         "Transport & Infrastructure": [
           Vaultx.Transport.HTTPBehaviour,
           Vaultx.Transport.HTTP,
           Vaultx.Transport.Pool
+        ],
+        "Cache System (Experimental)": [
+          Vaultx.Cache,
+          Vaultx.Cache.Manager,
+          Vaultx.Cache.L1,
+          Vaultx.Cache.L2,
+          Vaultx.Cache.L3,
+          Vaultx.Cache.Metrics,
+          Vaultx.Cache.Adapters,
+          Vaultx.Cache.Adapters.Behaviour,
+          Vaultx.Cache.Adapters.Memory
         ],
         "Secrets Engines": [
           Vaultx.Secrets.AWS.Behaviour,
@@ -153,10 +171,15 @@ defmodule Vaultx.MixProject do
           Vaultx.Secrets.AWS.Credentials,
           Vaultx.Secrets.Consul.Behaviour,
           Vaultx.Secrets.Consul,
+          Vaultx.Secrets.Database.Behaviour,
+          Vaultx.Secrets.Database,
+          Vaultx.Secrets.Database.StaticRoles,
           Vaultx.Secrets.KV.Behaviour,
           Vaultx.Secrets.KV,
           Vaultx.Secrets.KV.V1,
           Vaultx.Secrets.KV.V2,
+          Vaultx.Secrets.Nomad.Behaviour,
+          Vaultx.Secrets.Nomad,
           Vaultx.Secrets.PKI.Behaviour,
           Vaultx.Secrets.PKI.CA,
           Vaultx.Secrets.PKI.Certificates,
@@ -188,6 +211,8 @@ defmodule Vaultx.MixProject do
           Vaultx.Sys.AuditHash,
           Vaultx.Sys.Mounts,
           Vaultx.Sys.Remount,
+          Vaultx.Sys.Policies,
+          Vaultx.Sys.Policies.Password,
           Vaultx.Sys.SealBackendStatus,
           Vaultx.Sys.SealStatus,
           Vaultx.Sys.Seal,
@@ -200,6 +225,10 @@ defmodule Vaultx.MixProject do
           Vaultx.Sys.Namespaces,
           Vaultx.Sys.Policy,
           Vaultx.Sys.Tools
+        ],
+        "Test Helper": [
+          Vaultx.Test.HTTPHelpers,
+          Vaultx.Test.Mocks
         ]
       ]
     ]

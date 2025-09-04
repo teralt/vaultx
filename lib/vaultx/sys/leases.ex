@@ -474,7 +474,7 @@ defmodule Vaultx.Sys.Leases do
       module: __MODULE__
     }
 
-    Logger.warning("Force revoking leases by prefix", metadata)
+    Logger.warn("Force revoking leases by prefix", metadata)
     Telemetry.operation_start(metadata)
 
     path = "sys/leases/revoke-force/#{prefix}"
@@ -483,7 +483,7 @@ defmodule Vaultx.Sys.Leases do
       {:ok, %{status: status}} when status in [200, 204] ->
         duration = System.monotonic_time() - start_time
 
-        Logger.warning("Force revocation completed", metadata)
+        Logger.warn("Force revocation completed", metadata)
         Telemetry.operation_success(duration, metadata)
 
         :ok

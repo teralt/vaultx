@@ -91,7 +91,7 @@ defmodule Vaultx.Base.LoggerTest do
       end)
     end
 
-    test "converts :warn to :warning for Elixir 1.18+ compatibility" do
+    test "converts :warn to :warn for Elixir 1.18+ compatibility" do
       with_config(:warn, fn ->
         log = capture_log(fn -> Logger.warn("Warning") end)
         assert log =~ "[warning]"
@@ -102,7 +102,7 @@ defmodule Vaultx.Base.LoggerTest do
   describe "warning/2" do
     test "is an alias for warn/2" do
       with_config(:warn, fn ->
-        log = capture_log(fn -> Logger.warning("Warning message") end)
+        log = capture_log(fn -> Logger.warn("Warning message") end)
         assert log =~ "[warning] [Vaultx] Warning message"
       end)
     end

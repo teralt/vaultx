@@ -199,7 +199,7 @@ defmodule Vaultx.Sys.Health do
             details: %{status: status, body: body}
           )
 
-        Logger.warning("Unexpected health status", Map.put(metadata, :error, error))
+        Logger.warn("Unexpected health status", Map.put(metadata, :error, error))
         Telemetry.operation_failure(duration, Map.put(metadata, :error, error))
 
         {:error, error}

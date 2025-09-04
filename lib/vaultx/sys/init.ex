@@ -22,13 +22,13 @@ defmodule Vaultx.Sys.Init do
 
   ## Important Security Notes
 
-  **Critical Security Considerations**
+  Critical Security Considerations
   - Initialization is a one-time operation that cannot be repeated
   - Root token has unlimited privileges and should be secured immediately
   - Unseal keys should be distributed among trusted operators
   - Consider using PGP encryption for key protection
 
-  **Key Management**
+  Key Management
   - Store unseal keys securely and separately
   - Distribute keys among multiple trusted operators
   - Consider using auto-unseal mechanisms for production

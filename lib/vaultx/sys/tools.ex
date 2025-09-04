@@ -22,17 +22,17 @@ defmodule Vaultx.Sys.Tools do
 
   ## Important Notes
 
-  **Authentication Required**
+  Authentication Required
   - All tools endpoints require valid authentication
   - Appropriate permissions needed for tool access
   - Some features may be restricted based on policy
 
-  **Enterprise Features**
+  Enterprise Features
   - Seal entropy source requires Vault Enterprise
   - Mixed entropy sources available in Enterprise editions
   - Platform entropy available in all editions
 
-  **Input Validation**
+  Input Validation
   - Hash input must be base64 encoded
   - Random byte counts have reasonable limits
   - Invalid parameters will return appropriate errors

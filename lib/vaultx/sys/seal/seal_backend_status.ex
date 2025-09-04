@@ -28,17 +28,17 @@ defmodule Vaultx.Sys.SealBackendStatus do
 
   ## Important Notes
 
-  **Unauthenticated Endpoint**
+  Unauthenticated Endpoint
   - No authentication required to check backend status
   - Safe to call from monitoring and health check systems
   - Provides operational visibility without exposing secrets
 
-  **Auto-Seal Configurations**
+  Auto-Seal Configurations
   - Most relevant for auto-seal setups (HSM, Cloud KMS, etc.)
   - May show limited information for Shamir seal configurations
   - Backend health affects Vault's ability to unseal automatically
 
-  **High Availability Considerations**
+  High Availability Considerations
   - Backend status may vary across cluster nodes
   - Use for comprehensive cluster health monitoring
   - Consider backend redundancy in HA configurations

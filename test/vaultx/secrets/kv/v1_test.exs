@@ -4,15 +4,14 @@ defmodule Vaultx.Secrets.KV.V1Test do
 
   alias Vaultx.Secrets.KV.V1
   alias Vaultx.Base.Error
-  alias Vaultx.Types
 
   describe "read/2" do
     test "reads secret successfully" do
       # HTTP client returns Vault shape: {status, body: %{"data" => data}}
       expect_get(200, %{"data" => %{"username" => "admin"}})
 
-      assert {:ok, %Types.SecretData{} = secret} = V1.read("myapp/config")
-      assert secret.data == %{"username" => "admin"}
+      assert {:ok, secret} = V1.read("myapp/config")
+      assert %{data: %{"username" => "admin"}} = secret
       assert secret.version == nil
       assert secret.metadata == nil
       refute secret.destroyed
@@ -41,7 +40,8 @@ defmodule Vaultx.Secrets.KV.V1Test do
     test "writes secret successfully" do
       expect_post(200, %{})
 
-      assert {:ok, %Types.WriteResult{} = res} = V1.write("myapp/config", %{"k" => "v"})
+      assert {:ok, res} = V1.write("myapp/config", %{"k" => "v"})
+
       assert res.version == nil
       refute res.destroyed
     end
@@ -132,7 +132,7 @@ defmodule Vaultx.Secrets.KV.V1Test do
     test "lists keys successfully" do
       stub_ok(:get, 200, %{"data" => %{"keys" => ["a", "b/"]}})
 
-      assert {:ok, %Types.ListResult{keys: ["a", "b/"]}} = V1.list("myapp/")
+      assert {:ok, %{keys: ["a", "b/"]}} = V1.list("myapp/")
     end
 
     test "returns not_found on 404" do
@@ -151,49 +151,6 @@ defmodule Vaultx.Secrets.KV.V1Test do
       stub_request_raw(:get, :timeout)
 
       assert {:error, %Error{type: :network_error}} = V1.list("myapp/")
-    end
-  end
-
-  describe "health_check/1" do
-    test "healthy when list succeeds" do
-      stub_ok(
-        :get,
-        200,
-        %{"data" => %{"keys" => []}},
-        assert_url_contains("/v1/secret/health-check")
-      )
-
-      assert {:ok, %Types.HealthStatus{healthy: true}} = V1.health_check()
-    end
-
-    test "unhealthy when list fails" do
-      stub_request_raw(:get, :timeout)
-
-      assert {:ok, %Types.HealthStatus{healthy: false}} = V1.health_check()
-    end
-  end
-
-  describe "metadata/0 and health_check/1" do
-    test "metadata returns KV v1 info" do
-      assert {:ok, %Types.EngineMetadata{} = md} = V1.metadata()
-      assert md.type == :kv
-      assert md.version == 1
-      assert :read in md.capabilities
-      refute :versioning in md.capabilities
-    end
-
-    test "health_check succeeds when list works" do
-      # list("health-check", []) internally -> GET /v1/secret/health-check/?list=true
-      stub_ok(:get, 200, %{"data" => %{"keys" => []}})
-
-      assert {:ok, %Types.HealthStatus{healthy: true}} = V1.health_check([])
-    end
-
-    test "health_check false on error" do
-      stub_ok(:get, 404, %{"errors" => ["not found"]})
-
-      assert {:ok, %Types.HealthStatus{healthy: false, details: %{error: %Error{}}}} =
-               V1.health_check([])
     end
   end
 

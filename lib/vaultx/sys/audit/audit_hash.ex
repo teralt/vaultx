@@ -28,12 +28,12 @@ defmodule Vaultx.Sys.AuditHash do
 
   ## Important Security Notes
 
-  **Restricted Endpoint**
+  Restricted Endpoint
   - Must be called from root or administrative namespace
   - Requires appropriate audit device access permissions
   - Hash calculation uses the same salt as audit device
 
-  **Data Encoding Requirements**
+  Data Encoding Requirements
   - Binary data must be base64-encoded before hashing
   - JSON API responses are automatically base64-encoded by Vault
   - Use proper encoding for certificate data (DER format)

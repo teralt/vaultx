@@ -68,9 +68,8 @@ defmodule Vaultx.Transport.Pool do
   """
 
   use GenServer
-  require Logger
 
-  alias Vaultx.Base.{Config, Error, Logger}
+  alias Vaultx.Base.{Config, Error, Logger, Telemetry}
   alias Vaultx.Types
 
   @default_pool_size 10
@@ -136,17 +135,39 @@ defmodule Vaultx.Transport.Pool do
     pool = Keyword.get(opts, :pool, __MODULE__)
     timeout = Keyword.get(opts, :timeout, @default_timeout)
 
+    start_time = System.monotonic_time()
+
     with {:ok, connection} <- get_connection(pool, timeout) do
       try do
         result = execute_request(connection, method, path, body, headers, opts)
         return_connection(pool, connection)
+
+        # Record successful request timing
+        duration = System.monotonic_time() - start_time
+        emit_pool_metrics_if_enabled(pool, duration)
+
         result
       rescue
         error ->
           # Don't return potentially broken connection
           Logger.error("Request failed with connection error", %{error: error})
+
+          # Emit pool event for connection error
+          Telemetry.emit_pool_event(:connection_error, %{
+            pool_name: pool,
+            error: inspect(error)
+          })
+
           {:error, Error.new(:network_error, "Connection error: #{inspect(error)}")}
       end
+    else
+      {:error, :pool_exhausted} ->
+        # Emit pool exhaustion event
+        Telemetry.emit_pool_event(:exhaustion, %{pool_name: pool})
+        {:error, Error.new(:pool_exhausted, "Connection pool exhausted")}
+
+      error ->
+        error
     end
   end
 
@@ -437,5 +458,29 @@ defmodule Vaultx.Transport.Pool do
 
   defp generate_connection_id do
     :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+  end
+
+  # Enhanced telemetry functions
+
+  defp emit_pool_metrics_if_enabled(pool_name, response_time) do
+    # Simple metrics emission - get basic stats and emit
+    try do
+      stats = stats(pool_name)
+
+      # Convert response time to milliseconds
+      response_time_ms = System.convert_time_unit(response_time, :native, :millisecond)
+
+      Telemetry.emit_pool_metrics(
+        Map.get(stats, :active_connections, 0),
+        Map.get(stats, :idle_connections, 0),
+        Map.get(stats, :pending_requests, 0),
+        [response_time_ms],
+        %{pool_name: pool_name}
+      )
+    rescue
+      _ ->
+        # Fallback if stats unavailable
+        Telemetry.emit_pool_metrics(0, 0, 0, [], %{pool_name: pool_name})
+    end
   end
 end

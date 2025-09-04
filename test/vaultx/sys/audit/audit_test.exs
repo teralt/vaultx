@@ -5,6 +5,24 @@ defmodule Vaultx.Sys.AuditTest do
   alias Vaultx.Sys.Audit
   alias Vaultx.Base.Error
 
+  setup do
+    # Ensure rate limiter is available if rate limiting is enabled
+    # This prevents GenServer.call errors when rate limiting is configured
+    config = Vaultx.Base.Config.get()
+
+    if config.rate_limit_enabled and config.rate_limit_requests > 0 do
+      unless Process.whereis(Vaultx.Base.RateLimiter) do
+        {:ok, _pid} =
+          Vaultx.Base.RateLimiter.start_link(
+            rate: config.rate_limit_requests,
+            burst: config.rate_limit_burst
+          )
+      end
+    end
+
+    :ok
+  end
+
   # Sample audit devices response
   @audit_devices_response %{
     "file" => %{
