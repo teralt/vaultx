@@ -24,10 +24,10 @@ Configuration is resolved in priority order:
 
 > [!IMPORTANT]
 > **v0.7.0 Breaking Changes**: This version includes breaking changes in KV behaviour (struct → map) and configuration validation. See [CHANGELOG.md](../CHANGELOG.md) for migration guide.
->
+
 > [!NOTE]
 > **Production Ready**: All caching, configuration, and telemetry features are now production-ready with comprehensive testing and stability guarantees.
->
+
 > [!TIP]
 > **Performance**: Enable caching for up to 90% performance improvement in secret access operations.
 
