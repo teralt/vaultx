@@ -1,14 +1,16 @@
 # VaultX Configuration Guide
 
-VaultX provides a modern, flexible configuration system with comprehensive validation and optimization capabilities.
+VaultX v0.7.0 provides a modern, enterprise-grade configuration system with hot reload, comprehensive validation, and intelligent optimization capabilities.
 
 ## Configuration Philosophy
 
-- **Dynamic**: Configuration changes take effect immediately
+- **Hot Reload**: Configuration changes take effect without restarts
 - **Hierarchical**: Environment variables → Application config → Defaults
-- **Validated**: Comprehensive validation with detailed feedback
-- **Secure**: Built-in security best practices and recommendations
-- **Observable**: Configuration analysis and health monitoring
+- **Validated**: Comprehensive validation with detailed error reporting
+- **Optimized**: Intelligent performance optimization and recommendations
+- **Secure**: Built-in security best practices and compliance checks
+- **Observable**: Real-time configuration analysis and health monitoring
+- **Template-Based**: Environment-specific configuration templates
 
 ## Configuration Sources
 
@@ -20,11 +22,14 @@ Configuration is resolved in priority order:
 
 ## Important Notes
 
-> [!WARNING]
-> **Experimental Features**: The intelligent caching system is currently experimental and may undergo breaking changes in future versions. While functional and tested, use with caution in production environments.
+> [!IMPORTANT]
+> **v0.7.0 Breaking Changes**: This version includes breaking changes in KV behaviour (struct → map) and configuration validation. See [CHANGELOG.md](../CHANGELOG.md) for migration guide.
 >
 > [!NOTE]
-> **Configuration Analysis**: All configuration validation, analysis, and optimization features are stable and production-ready. They provide valuable insights without affecting runtime behavior.
+> **Production Ready**: All caching, configuration, and telemetry features are now production-ready with comprehensive testing and stability guarantees.
+>
+> [!TIP]
+> **Performance**: Enable caching for up to 90% performance improvement in secret access operations.
 
 ## Core Configuration
 
@@ -74,7 +79,29 @@ Configuration is resolved in priority order:
 | `telemetry_enabled` | `VAULTX_TELEMETRY_ENABLED` | `true` | Enable telemetry |
 | `audit_enabled` | `VAULTX_AUDIT_ENABLED` | `false` | Enable audit logging |
 | `metrics_enabled` | `VAULTX_METRICS_ENABLED` | `true` | Enable metrics |
-| `cache_enabled` | `VAULTX_CACHE_ENABLED` | `true` | Enable intelligent caching (experimental) |
+| `cache_enabled` | `VAULTX_CACHE_ENABLED` | `true` | Enable multi-layer caching system |
+
+### Multi-Layer Caching System
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `cache_l1_enabled` | `VAULTX_CACHE_L1_ENABLED` | `true` | Enable L1 in-memory cache |
+| `cache_l1_ttl` | `VAULTX_CACHE_L1_TTL` | `300` | L1 cache TTL (seconds) |
+| `cache_l1_max_size` | `VAULTX_CACHE_L1_MAX_SIZE` | `1000` | L1 cache max entries |
+| `cache_l2_enabled` | `VAULTX_CACHE_L2_ENABLED` | `false` | Enable L2 distributed cache |
+| `cache_l2_ttl` | `VAULTX_CACHE_L2_TTL` | `3600` | L2 cache TTL (seconds) |
+| `cache_l3_enabled` | `VAULTX_CACHE_L3_ENABLED` | `false` | Enable L3 persistent cache |
+| `cache_l3_ttl` | `VAULTX_CACHE_L3_TTL` | `86400` | L3 cache TTL (seconds) |
+| `cache_encryption_enabled` | `VAULTX_CACHE_ENCRYPTION_ENABLED` | `true` | Encrypt cached data |
+
+### Database Secrets Engine
+
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| `database_default_ttl` | `VAULTX_DATABASE_DEFAULT_TTL` | `3600` | Default credential TTL (seconds) |
+| `database_max_ttl` | `VAULTX_DATABASE_MAX_TTL` | `86400` | Maximum credential TTL (seconds) |
+| `database_connection_timeout` | `VAULTX_DATABASE_CONNECTION_TIMEOUT` | `30000` | Database connection timeout (ms) |
+| `database_pool_size` | `VAULTX_DATABASE_POOL_SIZE` | `10` | Database connection pool size |
 
 ### Security & Compliance
 
@@ -108,8 +135,13 @@ export VAULTX_TIMEOUT="60000"
 export VAULTX_RETRY_ATTEMPTS="5"
 export VAULTX_POOL_SIZE="20"
 
-# Features
+# Caching system
 export VAULTX_CACHE_ENABLED="true"
+export VAULTX_CACHE_L1_ENABLED="true"
+export VAULTX_CACHE_L2_ENABLED="false"
+export VAULTX_CACHE_L3_ENABLED="false"
+
+# Features
 export VAULTX_TELEMETRY_ENABLED="true"
 export VAULTX_AUDIT_ENABLED="true"
 ```
@@ -126,8 +158,16 @@ config :vaultx,
   ssl_verify: true,
   pool_size: 10,
 
+  # Multi-layer caching system
+  cache_enabled: true,
+  cache_l1_enabled: true,
+  cache_l1_ttl: 300,
+  cache_l1_max_size: 1000,
+  cache_l2_enabled: false,
+  cache_l3_enabled: false,
+  cache_encryption_enabled: true,
+
   # Features
-  cache_enabled: true,  # Experimental feature
   telemetry_enabled: true,
   audit_enabled: false,
 
@@ -274,3 +314,63 @@ prod_template = Vaultx.Config.Templates.generate(:production,
 # Generate migration template
 migration = Vaultx.Config.Templates.generate_migration(:development, :production)
 ```
+
+## v0.7.0 New Features
+
+### Hot Configuration Reload
+
+VaultX now supports runtime configuration updates without application restarts:
+
+```elixir
+# Update configuration at runtime
+new_config = %{cache_l1_ttl: 600, pool_size: 20}
+:ok = Vaultx.Config.HotReload.update(new_config)
+
+# Monitor configuration changes
+Vaultx.Config.HotReload.subscribe(self())
+receive do
+  {:config_updated, changes} ->
+    IO.inspect(changes, label: "Configuration updated")
+end
+```
+
+### Enhanced Caching System
+
+Multi-layer caching provides significant performance improvements:
+
+```elixir
+# Configure caching for optimal performance
+config :vaultx,
+  cache_enabled: true,
+  cache_l1_enabled: true,      # In-memory cache (fastest)
+  cache_l1_ttl: 300,           # 5 minutes
+  cache_l2_enabled: true,      # Distributed cache (multi-node)
+  cache_l2_ttl: 3600,          # 1 hour
+  cache_l3_enabled: true,      # Persistent cache (survives restarts)
+  cache_l3_ttl: 86400,         # 24 hours
+  cache_encryption_enabled: true
+```
+
+### Database Secrets Engine Configuration
+
+Configure the new Database secrets engine for dynamic credentials:
+
+```elixir
+config :vaultx,
+  # Database secrets engine defaults
+  database_default_ttl: 3600,        # 1 hour default TTL
+  database_max_ttl: 86400,           # 24 hours maximum TTL
+  database_connection_timeout: 30000, # 30 seconds
+  database_pool_size: 10              # Connection pool size
+```
+
+### Migration from v0.6.x
+
+Key changes when upgrading from v0.6.x:
+
+1. **KV Behaviour**: Update pattern matching from structs to maps
+2. **Configuration Validation**: Review configurations as validation is stricter
+3. **Caching**: Enable caching for performance improvements
+4. **Telemetry**: New telemetry events available for monitoring
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete migration guide.

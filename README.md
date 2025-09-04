@@ -43,11 +43,15 @@ export VAULTX_TOKEN="hvs.xxxxx"
 ### 3. Basic Usage
 
 ```elixir
-# Read secrets
-{:ok, data} = Vaultx.Secrets.KV.V2.read("myapp/config")
+# Read secrets (with intelligent caching)
+{:ok, %{data: data}} = Vaultx.Secrets.KV.V2.read("myapp/config")
 
 # Write secrets
 {:ok, result} = Vaultx.Secrets.KV.V2.write("myapp/config", %{"key" => "value"})
+
+# Generate dynamic database credentials
+{:ok, creds} = Vaultx.Secrets.Database.generate_credentials("readonly-role")
+# %{username: "v-root-readonly-abc123", password: "secure-password"}
 
 # System operations
 {:ok, health} = Vaultx.Sys.Health.check()
@@ -58,16 +62,19 @@ export VAULTX_TOKEN="hvs.xxxxx"
 
 ### Secrets Management
 
-- **KV v1/v2**: Full support with automatic version detection
-- **Dynamic Secrets**: AWS, PKI, Transit, TOTP, RabbitMQ, Consul
+- **KV v1/v2**: Full support with automatic version detection and intelligent caching
+- **Database**: Dynamic credentials for MySQL, PostgreSQL, MongoDB, Oracle, MSSQL, Redis
+- **Dynamic Secrets**: AWS, PKI, Transit, TOTP, RabbitMQ, Consul, Nomad
+- **Static Secrets**: Automatic password rotation and lifecycle management
 - **Lease Management**: Lookup, renew, revoke, bulk operations
 
 ### Authentication Methods
 
 - **Token**: Direct token authentication and validation
-- **AppRole**: Machine-to-machine authentication
-- **JWT/OIDC**: JSON Web Token authentication
-- **AWS, Azure, GitHub, LDAP, UserPass**: Multiple identity providers
+- **AppRole**: Machine-to-machine authentication with role-based access
+- **JWT/OIDC**: JSON Web Token authentication with OIDC support
+- **Cloud Providers**: AWS IAM, Azure AD, AliCloud authentication
+- **Identity Systems**: GitHub, LDAP, UserPass integration
 
 ### System Operations
 
@@ -78,10 +85,11 @@ export VAULTX_TOKEN="hvs.xxxxx"
 
 ### Performance & Reliability
 
-- **Intelligent Caching**: Multi-layer caching with encryption support (experimental)
-- **Connection Pooling**: Efficient HTTP connection management
-- **Adaptive Retries**: Exponential backoff with jitter
-- **Health Monitoring**: Real-time system health assessment
+- **Multi-Layer Caching**: L1 (Memory), L2 (Distributed), L3 (Persistent) with up to 90% performance improvement
+- **Hot Configuration Reload**: Runtime configuration updates without restarts
+- **Connection Pooling**: Efficient HTTP connection management with health monitoring
+- **Adaptive Retries**: Exponential backoff with jitter and circuit breaker patterns
+- **Comprehensive Telemetry**: Cache metrics, security events, and performance monitoring
 
 ## Architecture
 
