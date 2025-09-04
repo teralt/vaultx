@@ -35,7 +35,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         assert_url_contains("/v1/secret/data/p")
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} =
+      assert {:ok, %{created_time: nil, deletion_time: nil}} =
                V2.read("p", mount_path: "secret")
     end
 
@@ -54,7 +54,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         }
       })
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{} = s} = V2.read("apps/config")
+      assert {:ok, s} = V2.read("apps/config")
       assert s.data == %{"key" => "val"}
       assert s.version == 2
       assert %DateTime{} = s.created_time
@@ -101,7 +101,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{version: 3}} =
+      assert {:ok, %{version: 3}} =
                V2.write("apps/config", %{"k" => "v"}, cas: 1)
     end
 
@@ -208,7 +208,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, %{"data" => %{"created_time" => now, "deletion_time" => nil}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{metadata: %{"created_time" => ^now}}} =
+      assert {:ok, %{metadata: %{"created_time" => ^now}}} =
                V2.read_metadata("p")
 
       expect_any(:get, 404, %{})
@@ -264,7 +264,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         }
       })
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{created_time: nil, deletion_time: nil}} =
+      assert {:ok, %{created_time: nil, deletion_time: nil}} =
                V2.read("p")
     end
 
@@ -350,7 +350,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "3"]}} =
+      assert {:ok, %{keys: ["1", "3"]}} =
                V2.list_versions("p")
 
       # 404 error
@@ -369,7 +369,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
     test "list/2 returns keys and errors" do
       expect_get(200, %{"data" => %{"keys" => ["a", "b/"]}}, assert_url_contains("/metadata/"))
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a", "b/"]}} = V2.list("p/")
+      assert {:ok, %{keys: ["a", "b/"]}} = V2.list("p/")
 
       expect_any(:get, 404, %{})
 
@@ -381,7 +381,7 @@ defmodule Vaultx.Secrets.KV.V2Test do
 
       expect_any(:get, 200, body)
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["1", "2", "10"]}} =
+      assert {:ok, %{keys: ["1", "2", "10"]}} =
                V2.list_versions("p")
     end
   end

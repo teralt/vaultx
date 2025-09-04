@@ -107,7 +107,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         assert String.contains?(url, "/v1/kv1/")
       end)
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"x" => "1"}}} =
+      assert {:ok, %{data: %{"x" => "1"}}} =
                KV.read("app/x", mount_path: "kv1")
 
       # 3) write
@@ -118,7 +118,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # 4) list
       expect_get(200, %{"data" => %{"keys" => ["a/"]}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a/"]}} =
+      assert {:ok, %{keys: ["a/"]}} =
                KV.list("app/", mount_path: "kv1")
 
       # 5) delete
@@ -177,7 +177,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # read_metadata
       expect_get(200, %{"data" => %{}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{}} =
+      assert {:ok, %{}} =
                KV.read_metadata("p", mount_path: "secret")
 
       # undelete
@@ -191,7 +191,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       # list_versions
       expect_get(200, %{"data" => %{"versions" => %{}}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{}} =
+      assert {:ok, %{}} =
                KV.list_versions("p", mount_path: "secret")
     end
   end
@@ -333,7 +333,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %{data: %{"key" => "value"}}} =
                KV.read_version("test", 2, mount_path: "secret")
     end
 
@@ -363,7 +363,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
       )
 
       # Call with only 2 args to trigger the default opts clause
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %{data: %{"key" => "value"}}} =
                KV.read_version("test", 2)
     end
 
@@ -393,7 +393,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{}} =
+      assert {:ok, %{}} =
                KV.write_cas("test", %{"key" => "value"}, 1, mount_path: "secret")
     end
 
@@ -460,7 +460,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{data: %{"key" => "value"}}} =
+      assert {:ok, %{data: %{"key" => "value"}}} =
                KV.read_latest("test", mount_path: "secret")
     end
 
@@ -706,7 +706,7 @@ defmodule Vaultx.Secrets.KV.KVTest do
         end
       )
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{}} =
+      assert {:ok, %{}} =
                KV.update_field("test", "password", "new_secret", mount_path: "secret")
     end
 

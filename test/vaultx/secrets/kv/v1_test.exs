@@ -10,8 +10,8 @@ defmodule Vaultx.Secrets.KV.V1Test do
       # HTTP client returns Vault shape: {status, body: %{"data" => data}}
       expect_get(200, %{"data" => %{"username" => "admin"}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.SecretData{} = secret} = V1.read("myapp/config")
-      assert secret.data == %{"username" => "admin"}
+      assert {:ok, secret} = V1.read("myapp/config")
+      assert %{data: %{"username" => "admin"}} = secret
       assert secret.version == nil
       assert secret.metadata == nil
       refute secret.destroyed
@@ -40,8 +40,7 @@ defmodule Vaultx.Secrets.KV.V1Test do
     test "writes secret successfully" do
       expect_post(200, %{})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.WriteResult{} = res} =
-               V1.write("myapp/config", %{"k" => "v"})
+      assert {:ok, res} = V1.write("myapp/config", %{"k" => "v"})
 
       assert res.version == nil
       refute res.destroyed
@@ -133,7 +132,7 @@ defmodule Vaultx.Secrets.KV.V1Test do
     test "lists keys successfully" do
       stub_ok(:get, 200, %{"data" => %{"keys" => ["a", "b/"]}})
 
-      assert {:ok, %Vaultx.Secrets.KV.Behaviour.ListResult{keys: ["a", "b/"]}} = V1.list("myapp/")
+      assert {:ok, %{keys: ["a", "b/"]}} = V1.list("myapp/")
     end
 
     test "returns not_found on 404" do
