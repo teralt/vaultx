@@ -107,7 +107,6 @@ defmodule Vaultx.Secrets.KV do
 
   alias Vaultx.Base.{Error, Logger}
   alias Vaultx.Secrets.KV.{V1, V2}
-  alias Vaultx.Secrets.KV.Behaviour.SecretData
   alias Vaultx.Transport.HTTP
 
   @default_mount_path "secret"
@@ -342,14 +341,14 @@ defmodule Vaultx.Secrets.KV do
 
   defp do_keys(path, opts) do
     case read(path, opts) do
-      {:ok, %SecretData{data: data}} when is_map(data) -> {:ok, Map.keys(data)}
+      {:ok, %{data: data}} when is_map(data) -> {:ok, Map.keys(data)}
       {:error, error} -> {:error, error}
     end
   end
 
   defp do_get_field(path, field, opts) do
     case read(path, opts) do
-      {:ok, %SecretData{data: data}} when is_map(data) ->
+      {:ok, %{data: data}} when is_map(data) ->
         case Map.get(data, field) do
           nil -> {:error, Error.new(:not_found, "Field '#{field}' not found")}
           value -> {:ok, value}
@@ -362,7 +361,7 @@ defmodule Vaultx.Secrets.KV do
 
   defp do_update_field(path, field, value, opts) do
     case read(path, opts) do
-      {:ok, %SecretData{data: data}} when is_map(data) ->
+      {:ok, %{data: data}} when is_map(data) ->
         updated_data = Map.put(data, field, value)
         write(path, updated_data, opts)
 

@@ -100,60 +100,57 @@ defmodule Vaultx.Secrets.KV.Behaviour do
 
   alias Vaultx.Base.Error
 
-  # KV-specific structured types
-  defmodule SecretData do
-    @moduledoc """
-    Structured secret data with metadata for KV engines.
-    """
-    @type t :: %__MODULE__{
-            data: map(),
-            metadata: map() | nil,
-            version: pos_integer() | nil,
-            created_time: DateTime.t() | nil,
-            deletion_time: DateTime.t() | nil,
-            destroyed: boolean()
-          }
+  # Modern type definitions using @type instead of nested modules
+  @typedoc """
+  Structured secret data with metadata for KV engines.
 
-    defstruct [
-      :data,
-      :metadata,
-      :version,
-      :created_time,
-      :deletion_time,
-      destroyed: false
-    ]
-  end
+  ## Fields
 
-  defmodule WriteResult do
-    @moduledoc """
-    Result of a KV write operation.
-    """
-    @type t :: %__MODULE__{
-            version: pos_integer() | nil,
-            created_time: DateTime.t() | nil,
-            deletion_time: DateTime.t() | nil,
-            destroyed: boolean()
-          }
+  - `:data` - The actual secret data as a map
+  - `:metadata` - Optional metadata about the secret
+  - `:version` - Version number (KV v2 only)
+  - `:created_time` - When this version was created
+  - `:deletion_time` - When this version was deleted (if soft-deleted)
+  - `:destroyed` - Whether this version has been permanently destroyed
+  """
+  @type secret_data :: %{
+          data: map(),
+          metadata: map() | nil,
+          version: pos_integer() | nil,
+          created_time: DateTime.t() | nil,
+          deletion_time: DateTime.t() | nil,
+          destroyed: boolean()
+        }
 
-    defstruct [
-      :version,
-      :created_time,
-      :deletion_time,
-      destroyed: false
-    ]
-  end
+  @typedoc """
+  Result of a KV write operation.
 
-  defmodule ListResult do
-    @moduledoc """
-    Result of a KV list operation.
-    """
-    @type t :: %__MODULE__{
-            keys: [String.t()],
-            metadata: map() | nil
-          }
+  ## Fields
 
-    defstruct [:keys, :metadata]
-  end
+  - `:version` - Version number of the written secret (KV v2 only)
+  - `:created_time` - When this version was created
+  - `:deletion_time` - When this version was deleted (if applicable)
+  - `:destroyed` - Whether this version has been permanently destroyed
+  """
+  @type write_result :: %{
+          version: pos_integer() | nil,
+          created_time: DateTime.t() | nil,
+          deletion_time: DateTime.t() | nil,
+          destroyed: boolean()
+        }
+
+  @typedoc """
+  Result of a KV list operation.
+
+  ## Fields
+
+  - `:keys` - List of secret keys found
+  - `:metadata` - Optional metadata about the listing operation
+  """
+  @type list_result :: %{
+          keys: [String.t()],
+          metadata: map() | nil
+        }
 
   @typedoc """
   KV-specific operation options.
@@ -181,12 +178,12 @@ defmodule Vaultx.Secrets.KV.Behaviour do
   @typedoc """
   Result of a metadata read operation.
   """
-  @type metadata_result :: {:ok, SecretData.t()} | {:error, Error.t()}
+  @type metadata_result :: {:ok, secret_data()} | {:error, Error.t()}
 
   @typedoc """
   Result of a version list operation.
   """
-  @type versions_result :: {:ok, ListResult.t()} | {:error, Error.t()}
+  @type versions_result :: {:ok, list_result()} | {:error, Error.t()}
 
   @doc """
   Reads metadata for a secret path.

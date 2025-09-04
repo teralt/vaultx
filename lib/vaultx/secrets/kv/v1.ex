@@ -68,7 +68,6 @@ defmodule Vaultx.Secrets.KV.V1 do
   @behaviour Vaultx.Secrets.KV.Behaviour
 
   alias Vaultx.Base.{Error, Logger, Security, Telemetry}
-  alias Vaultx.Secrets.KV.Behaviour.{ListResult, SecretData, WriteResult}
   alias Vaultx.Transport.HTTP
 
   @default_mount_path "secret"
@@ -95,7 +94,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: 200, body: %{"data" => data}}} ->
           duration = System.monotonic_time() - start_time
 
-          secret_data = %SecretData{
+          secret_data = %{
             data: data,
             metadata: nil,
             version: nil,
@@ -181,7 +180,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: status}} when status in [200, 204] ->
           duration = System.monotonic_time() - start_time
 
-          write_result = %WriteResult{
+          write_result = %{
             version: nil,
             created_time: DateTime.utc_now(),
             deletion_time: nil,
@@ -323,7 +322,7 @@ defmodule Vaultx.Secrets.KV.V1 do
         {:ok, %{status: 200, body: %{"data" => %{"keys" => keys}}}} ->
           duration = System.monotonic_time() - start_time
 
-          list_result = %ListResult{
+          list_result = %{
             keys: keys,
             metadata: nil
           }

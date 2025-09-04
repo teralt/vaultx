@@ -85,7 +85,6 @@ defmodule Vaultx.Secrets.KV.V2 do
 
   alias Vaultx.Base.{Error, Logger, Security, Telemetry}
   alias Vaultx.Cache
-  alias Vaultx.Secrets.KV.Behaviour.{ListResult, SecretData, WriteResult}
   alias Vaultx.Transport.HTTP
 
   @default_mount_path "secret"
@@ -147,7 +146,7 @@ defmodule Vaultx.Secrets.KV.V2 do
 
     case HTTP.get("#{mount_path}/data/#{path}?#{URI.encode_query(query_params)}", opts) do
       {:ok, %{status: 200, body: %{"data" => response_data}}} ->
-        secret_data = %SecretData{
+        secret_data = %{
           data: response_data["data"] || %{},
           metadata: response_data["metadata"],
           version: response_data["metadata"]["version"],
@@ -210,7 +209,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => response_data}}} ->
           duration = System.monotonic_time() - start_time
 
-          write_result = %WriteResult{
+          write_result = %{
             version: response_data["version"],
             created_time: parse_datetime(response_data["created_time"]),
             deletion_time: parse_datetime(response_data["deletion_time"]),
@@ -397,7 +396,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => %{"keys" => keys}}}} ->
           duration = System.monotonic_time() - start_time
 
-          list_result = %ListResult{
+          list_result = %{
             keys: keys,
             metadata: nil
           }
@@ -531,7 +530,7 @@ defmodule Vaultx.Secrets.KV.V2 do
         {:ok, %{status: 200, body: %{"data" => response_data}}} ->
           duration = System.monotonic_time() - start_time
 
-          secret_data = %SecretData{
+          secret_data = %{
             data: %{},
             metadata: response_data,
             version: nil,
@@ -909,7 +908,7 @@ defmodule Vaultx.Secrets.KV.V2 do
             |> Enum.sort()
             |> Enum.map(&to_string/1)
 
-          list_result = %ListResult{
+          list_result = %{
             keys: version_list,
             metadata: response_data
           }
