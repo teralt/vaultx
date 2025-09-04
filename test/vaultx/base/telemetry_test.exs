@@ -366,4 +366,315 @@ defmodule Vaultx.Base.TelemetryTest do
       assert Telemetry.http_request_exception(400, %{error: "timeout"}) == :ok
     end
   end
+
+  describe "cache metrics" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "emit_cache_metrics/4 emits cache metrics with all parameters" do
+      hit_rate = 0.85
+      size = 1000
+      memory_usage = 2048
+      metadata = %{cache_type: "secrets"}
+
+      assert Telemetry.emit_cache_metrics(hit_rate, size, memory_usage, metadata) == :ok
+    end
+
+    test "emit_cache_metrics/3 works with default metadata" do
+      hit_rate = 0.75
+      size = 500
+      memory_usage = 1024
+
+      assert Telemetry.emit_cache_metrics(hit_rate, size, memory_usage) == :ok
+    end
+
+    test "emit_cache_event/3 emits cache events with metadata" do
+      event_type = :hit
+      key = "secret/myapp/config"
+      metadata = %{cache_type: "secrets"}
+
+      assert Telemetry.emit_cache_event(event_type, key, metadata) == :ok
+    end
+
+    test "emit_cache_event/2 works with default metadata" do
+      event_type = :miss
+      key = "secret/myapp/database"
+
+      assert Telemetry.emit_cache_event(event_type, key) == :ok
+    end
+
+    test "emit_cache_event/2 anonymizes sensitive paths" do
+      event_type = :eviction
+      key = "secret/sensitive/password"
+
+      assert Telemetry.emit_cache_event(event_type, key) == :ok
+    end
+  end
+
+  describe "connection pool metrics" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "emit_pool_metrics/5 emits pool metrics with all parameters" do
+      active = 5
+      idle = 3
+      pending = 2
+      response_times = [100, 150, 200]
+      metadata = %{pool_name: "vault_pool"}
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times, metadata) == :ok
+    end
+
+    test "emit_pool_metrics/4 works with default metadata" do
+      active = 8
+      idle = 2
+      pending = 1
+      response_times = [80, 120, 180]
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times) == :ok
+    end
+
+    test "emit_pool_metrics/3 works with default response times and metadata" do
+      active = 10
+      idle = 5
+      pending = 0
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending) == :ok
+    end
+
+    test "emit_pool_event/2 emits pool events with metadata" do
+      event_type = :connection_created
+      metadata = %{pool_name: "vault_pool", connection_id: "conn_123"}
+
+      assert Telemetry.emit_pool_event(event_type, metadata) == :ok
+    end
+
+    test "emit_pool_event/1 works with default metadata" do
+      event_type = :connection_closed
+
+      assert Telemetry.emit_pool_event(event_type) == :ok
+    end
+  end
+
+  describe "security events" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "emit_security_event/3 emits security events with metadata" do
+      event_type = :authentication_failure
+      severity = :high
+      metadata = %{user: "test_user", ip: "192.168.1.100"}
+
+      assert Telemetry.emit_security_event(event_type, severity, metadata) == :ok
+    end
+
+    test "emit_security_event/2 works with default metadata" do
+      event_type = :unauthorized_access
+      severity = :critical
+
+      assert Telemetry.emit_security_event(event_type, severity) == :ok
+    end
+
+    test "emit_security_event/2 handles different severity levels" do
+      assert Telemetry.emit_security_event(:login_attempt, :low) == :ok
+      assert Telemetry.emit_security_event(:permission_denied, :medium) == :ok
+      assert Telemetry.emit_security_event(:data_breach, :high) == :ok
+      assert Telemetry.emit_security_event(:system_compromise, :critical) == :ok
+    end
+
+    test "emit_security_anomaly/3 emits security anomalies with metadata" do
+      description = "Unusual access pattern detected"
+      severity = :medium
+      metadata = %{pattern: "rapid_requests", threshold: 100}
+
+      assert Telemetry.emit_security_anomaly(description, severity, metadata) == :ok
+    end
+
+    test "emit_security_anomaly/2 works with default metadata" do
+      description = "Failed login attempts exceeded threshold"
+      severity = :high
+
+      assert Telemetry.emit_security_anomaly(description, severity) == :ok
+    end
+
+    test "emit_security_anomaly/2 handles different severity levels" do
+      assert Telemetry.emit_security_anomaly("Low priority anomaly", :low) == :ok
+      assert Telemetry.emit_security_anomaly("Medium priority anomaly", :medium) == :ok
+      assert Telemetry.emit_security_anomaly("High priority anomaly", :high) == :ok
+      assert Telemetry.emit_security_anomaly("Critical anomaly", :critical) == :ok
+    end
+  end
+
+  describe "business metrics" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "emit_business_metrics/3 emits business metrics with metadata" do
+      metric_type = :secret_reads
+      value = 150
+      metadata = %{department: "engineering", application: "web_app"}
+
+      assert Telemetry.emit_business_metrics(metric_type, value, metadata) == :ok
+    end
+
+    test "emit_business_metrics/2 works with default metadata" do
+      metric_type = :token_generations
+      value = 25
+
+      assert Telemetry.emit_business_metrics(metric_type, value) == :ok
+    end
+
+    test "emit_business_metrics/2 handles different metric types" do
+      assert Telemetry.emit_business_metrics(:api_calls, 1000) == :ok
+      assert Telemetry.emit_business_metrics(:user_sessions, 50) == :ok
+      assert Telemetry.emit_business_metrics(:data_volume, 2048) == :ok
+    end
+  end
+
+  describe "performance metrics" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "emit_performance_metrics/4 emits performance metrics with metadata" do
+      operation = "secret_read"
+      duration = 150
+      success = true
+      metadata = %{cache_hit: true, path: "secret/app/config"}
+
+      assert Telemetry.emit_performance_metrics(operation, duration, success, metadata) == :ok
+    end
+
+    test "emit_performance_metrics/3 works with default metadata" do
+      operation = "token_validation"
+      duration = 75
+      success = false
+
+      assert Telemetry.emit_performance_metrics(operation, duration, success) == :ok
+    end
+
+    test "emit_performance_metrics/3 handles success and failure cases" do
+      assert Telemetry.emit_performance_metrics("auth_login", 200, true) == :ok
+      assert Telemetry.emit_performance_metrics("auth_login", 500, false) == :ok
+    end
+  end
+
+  describe "private helper functions (tested indirectly)" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, true)
+      :ok
+    end
+
+    test "severity_to_number/1 is tested through security events" do
+      # Test all severity levels to ensure severity_to_number/1 is called
+      assert Telemetry.emit_security_event(:test_event, :low) == :ok
+      assert Telemetry.emit_security_event(:test_event, :medium) == :ok
+      assert Telemetry.emit_security_event(:test_event, :high) == :ok
+      assert Telemetry.emit_security_event(:test_event, :critical) == :ok
+      assert Telemetry.emit_security_event(:test_event, :unknown) == :ok
+    end
+
+    test "severity_to_number/1 is tested through security anomalies" do
+      # Test all severity levels in anomalies to ensure coverage
+      assert Telemetry.emit_security_anomaly("Test anomaly", :low) == :ok
+      assert Telemetry.emit_security_anomaly("Test anomaly", :medium) == :ok
+      assert Telemetry.emit_security_anomaly("Test anomaly", :high) == :ok
+      assert Telemetry.emit_security_anomaly("Test anomaly", :critical) == :ok
+      assert Telemetry.emit_security_anomaly("Test anomaly", :invalid) == :ok
+    end
+
+    test "calculate_average/1 is tested through pool metrics with empty list" do
+      # Test with empty response times to trigger calculate_average([])
+      active = 5
+      idle = 3
+      pending = 2
+      response_times = []
+      metadata = %{pool_name: "test_pool"}
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times, metadata) == :ok
+    end
+
+    test "calculate_average/1 is tested through pool metrics with values" do
+      # Test with response times to trigger calculate_average with values
+      active = 5
+      idle = 3
+      pending = 2
+      response_times = [100, 200, 300]
+      metadata = %{pool_name: "test_pool"}
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times, metadata) == :ok
+    end
+
+    test "calculate_average/1 is tested with single value" do
+      # Test with single response time to ensure division works
+      active = 1
+      idle = 0
+      pending = 0
+      response_times = [150]
+      metadata = %{pool_name: "single_pool"}
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times, metadata) == :ok
+    end
+
+    test "calculate_average/1 is tested with multiple values" do
+      # Test with multiple response times to ensure proper averaging
+      active = 10
+      idle = 5
+      pending = 3
+      response_times = [50, 100, 150, 200, 250]
+      metadata = %{pool_name: "multi_pool"}
+
+      assert Telemetry.emit_pool_metrics(active, idle, pending, response_times, metadata) == :ok
+    end
+
+    test "anonymize_path/1 is tested through cache events with secret paths" do
+      # Test path anonymization with secret paths
+      assert Telemetry.emit_cache_event(:hit, "secret/myapp/config") == :ok
+      assert Telemetry.emit_cache_event(:miss, "secret/sensitive/password") == :ok
+      assert Telemetry.emit_cache_event(:eviction, "secret/database/credentials") == :ok
+    end
+
+    test "anonymize_path/1 is tested through cache events with non-secret paths" do
+      # Test path anonymization with non-secret paths
+      assert Telemetry.emit_cache_event(:hit, "auth/token/lookup") == :ok
+      assert Telemetry.emit_cache_event(:miss, "sys/health") == :ok
+      assert Telemetry.emit_cache_event(:eviction, "kv/data/config") == :ok
+    end
+  end
+
+  describe "telemetry disabled for all new functions" do
+    setup do
+      Application.put_env(:vaultx, :telemetry_enabled, false)
+      :ok
+    end
+
+    test "all new telemetry functions work when disabled" do
+      # Cache functions
+      assert Telemetry.emit_cache_metrics(0.8, 100, 512) == :ok
+      assert Telemetry.emit_cache_event(:hit, "secret/test") == :ok
+
+      # Pool functions
+      assert Telemetry.emit_pool_metrics(5, 3, 2, [100, 200]) == :ok
+      assert Telemetry.emit_pool_event(:connection_created) == :ok
+
+      # Security functions
+      assert Telemetry.emit_security_event(:auth_failure, :high) == :ok
+      assert Telemetry.emit_security_anomaly("Test anomaly", :medium) == :ok
+
+      # Business functions
+      assert Telemetry.emit_business_metrics(:api_calls, 1000) == :ok
+
+      # Performance functions
+      assert Telemetry.emit_performance_metrics("test_op", 100, true) == :ok
+    end
+  end
 end

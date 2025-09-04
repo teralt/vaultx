@@ -332,6 +332,121 @@ defmodule Vaultx.ApplicationTest do
       # Test that the function executes without error
       assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
     end
+
+    test "handle_telemetry/4 processes cache metrics events" do
+      event = [:vaultx, :cache, :metrics]
+      measurements = %{hit_rate: 0.85, size: 1000, memory_usage: 2048}
+      metadata = %{cache_type: "secrets"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes cache events" do
+      # Test cache hit event
+      event = [:vaultx, :cache, :hit]
+      measurements = %{timestamp: System.monotonic_time()}
+      metadata = %{key: "secret/test"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+
+      # Test cache miss event
+      event = [:vaultx, :cache, :miss]
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+
+      # Test cache eviction event
+      event = [:vaultx, :cache, :eviction]
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes pool metrics events" do
+      event = [:vaultx, :pool, :metrics]
+
+      measurements = %{
+        active_connections: 5,
+        idle_connections: 3,
+        pending_requests: 2,
+        avg_response_time: 150
+      }
+
+      metadata = %{pool_name: "vault_pool"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes pool exhaustion events" do
+      event = [:vaultx, :pool, :exhaustion]
+      measurements = %{timestamp: System.monotonic_time()}
+      metadata = %{pool_name: "vault_pool"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes security events" do
+      event = [:vaultx, :security, :event]
+      measurements = %{severity_level: 3, timestamp: System.monotonic_time()}
+      metadata = %{event_type: :authentication_failure, user: "test_user"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes security anomaly events" do
+      event = [:vaultx, :security, :anomaly]
+      measurements = %{severity_level: 2, timestamp: System.monotonic_time()}
+      metadata = %{description: "Unusual access pattern", event_type: :anomaly}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes business metric events" do
+      event = [:vaultx, :business, :api_calls]
+      measurements = %{value: 1000, timestamp: System.monotonic_time()}
+      metadata = %{department: "engineering"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes performance metric events" do
+      event = [:vaultx, :performance]
+      measurements = %{duration: 150, success: 1, timestamp: System.monotonic_time()}
+      metadata = %{operation: "secret_read"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 processes unknown events with fallback" do
+      event = [:vaultx, :unknown, :event]
+      measurements = %{duration: 100}
+      metadata = %{test: "data"}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 handles nil memory_usage in cache metrics" do
+      event = [:vaultx, :cache, :metrics]
+      measurements = %{hit_rate: 0.75, size: 500, memory_usage: nil}
+      metadata = %{}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
+
+    test "handle_telemetry/4 handles missing memory_usage in cache metrics" do
+      event = [:vaultx, :cache, :metrics]
+      measurements = %{hit_rate: 0.75, size: 500}
+      metadata = %{}
+      config = %{}
+
+      assert VaultxApp.handle_telemetry(event, measurements, metadata, config) == :ok
+    end
   end
 
   describe "private function coverage" do
