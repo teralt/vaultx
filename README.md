@@ -26,7 +26,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:vaultx, "~> 0.6"}
+    {:vaultx, "~> 0.7"}
   ]
 end
 ```
